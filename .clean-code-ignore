@@ -1,0 +1,2 @@
+# Dateien, die der Clean-Code-Report übergeht (Glob, relativ zum Projektordner)
+**/TripService_Original.java
