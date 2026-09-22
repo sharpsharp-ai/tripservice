@@ -59,14 +59,17 @@ was wäre, wenn …       eigene Idee, der Coach spielt sie durch
 
 Ein Blick auf den Code, ohne Gnade und ohne Gate: Der Bericht sucht die klassischen Smells (lange Methoden,
 tiefe Verschachtelung, magische Zahlen, doppelter Code, kryptische Namen, toter Code, Tests ohne Namen)
-und macht daraus Punkte, einen Rang und eine Monster-Galerie. Vor dem Umbau einmal laufen lassen, danach wieder.
+und macht daraus Punkte, einen Rang und eine Monster-Galerie. Links die Funde, rechts der Code wie in der IDE,
+ein Klick springt zur Zeile.
 
 ```bash
-java tools/CleanCodeReport.java        # schreibt target/clean-code-report.html
+java .opencode/skills/clean-code-report/CleanCodeReport.java   # schreibt target/clean-code-report.html
 ```
 
+In opencode: `/clean-code-report` erzeugt den Bericht und nennt die drei teuersten Funde samt erstem Schritt.
 Nichts zu installieren, JDK 17 reicht. Jeder Lauf merkt sich den Punktestand in `.clean-code-history`,
-der Bericht zeigt den Verlauf.
+der Bericht zeigt den Verlauf. Der Skill ist ein Ordner: `.opencode/skills/clean-code-report/` plus der
+Command lassen sich in jedes Java-Projekt kopieren.
 
 ## Struktur
 
