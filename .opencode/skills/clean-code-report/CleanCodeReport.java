@@ -1405,6 +1405,7 @@ public class CleanCodeReport {
         System.out.println("Clean-Code-Report " + VERSION + ": " + score + " von 100, " + lv[0] + " " + lv[1]);
         Method boss = report.boss();
         if (boss != null) System.out.println("  Endgegner: " + boss.label() + " in " + boss.file.replaceAll(".*/", "") + ":" + boss.start + ", " + boss.codeLines + " Zeilen, Tiefe " + boss.depth + ", Komplexität " + boss.complexity + ", " + (boss.body == null ? 0 : boss.body.locals.size()) + " Variablen");
+        else System.out.println("  Endgegner: keiner (keine Methode mit 5 oder mehr Strafpunkten)");
         Map<Family, Double> fpen = report.penaltyByFamily();
         System.out.println("  Familien: " + Arrays.stream(Family.values()).map(f -> f.emoji + " " + f.title + " −" + fmt(fpen.get(f)) + "/" + fmt(f.cap)).collect(Collectors.joining(" · ")));
         Map<Smell, Double> pen = report.penaltyBySmell();
