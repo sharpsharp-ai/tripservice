@@ -33,7 +33,7 @@
     }
   },
   "agent": {
-    "refactoring-coach": {
+    "clean-code-coach": {
       "description": "Coacht Schritt für Schritt: erst unter Test bringen, dann umbauen. Ändert nach dem OK des Teilnehmers selbst.",
       "mode": "primary",
       "steps": 40,

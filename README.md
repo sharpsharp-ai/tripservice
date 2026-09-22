@@ -32,10 +32,10 @@ dazu sein [Video](https://www.youtube.com/watch?v=_NnElPO5BU0). Die Aufgabe als 
 
 ## Mit opencode arbeiten
 
-Das Repo bringt opencode eine Rolle mit: `refactoring-coach`. Er erklärt die Lage, stellt eine Frage, schlägt
+Das Repo bringt opencode eine Rolle mit: `clean-code-coach`. Er erklärt die Lage, stellt eine Frage, schlägt
 genau einen Schritt vor, macht ihn nach dem OK selbst und lässt `mvn -q verify` laufen. Eine Session für den
-ganzen Weg. Nichts installieren: im Projektordner `opencode --agent refactoring-coach` starten, dann bleibt
-die Rolle für alle Antworten im Dialog. In IntelliJ (ACP) den Session-Modus `refactoring-coach` wählen.
+ganzen Weg. Nichts installieren: im Projektordner `opencode --agent clean-code-coach` starten, dann bleibt
+die Rolle für alle Antworten im Dialog. In IntelliJ (ACP) den Session-Modus `clean-code-coach` wählen.
 
 ```text
 /coach                 Einstieg: Lage, Frage, erster Schritt als Vorschlag
@@ -46,14 +46,14 @@ was wäre, wenn …       eigene Idee, der Coach spielt sie durch
 | Datei | Wirkung |
 |---|---|
 | `AGENTS.md` | Befehle, Struktur, die Regel der Kata, Arbeitsweise. Liest jede Rolle in jeder Session |
-| `opencode.json` | die Rolle `refactoring-coach` mit ihren Rechten, die Bash-Whitelist |
+| `opencode.json` | die Rolle `clean-code-coach` mit ihren Rechten, die Bash-Whitelist |
 | `.opencode/commands/coach.md` | der Command; lesbares Markdown, das ist der Prompt |
 | `.opencode/skills/legacy-seams/SKILL.md` | die Techniken: Nähte, Reihenfolge, Coaching |
 | `scripts/unabgedeckt.sh` | nicht erreichte Zeilen und Verzweigungen aus dem JaCoCo-Bericht |
 
 | Rolle | Darf ändern | Bash |
 |---|---|---|
-| `refactoring-coach` | `src/`, außer `TripService_Original.java` | mvn, `scripts/unabgedeckt.sh`, ls, cat, grep, git status/diff/log |
+| `clean-code-coach` | `src/`, außer `TripService_Original.java` | mvn, `scripts/unabgedeckt.sh`, ls, cat, grep, git status/diff/log |
 
 ## Struktur
 
