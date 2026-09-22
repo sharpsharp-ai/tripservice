@@ -508,7 +508,10 @@ public class CleanCodeReport {
         String arcColor = score >= 70 ? "#38c172" : score >= 40 ? "#f6b73c" : "#e5484d";
         h.append("<div class=\"hero\"><svg viewBox=\"0 0 200 112\" width=\"170\" height=\"95\" role=\"img\" aria-label=\"Punktestand ").append(score).append("\">")
          .append("<path d=\"M22 100 A78 78 0 0 1 178 100\" fill=\"none\" stroke=\"rgba(255,255,255,.12)\" stroke-width=\"16\" stroke-linecap=\"round\"/>");
-        if (score > 0) h.append("<path d=\"M22 100 A78 78 0 ").append(score > 50 ? 1 : 0).append(" 1 ").append(fmt(x)).append(" ").append(fmt(y))
+        // Der farbige Bogen liegt auf dem grauen: gleicher Mittelpunkt, gleicher Radius, nie länger als der Halbkreis.
+        // Koordinaten mit Punkt, nicht mit deutschem Komma: im SVG-Pfad trennt das Komma Zahlen.
+        if (score >= 100) h.append("<path d=\"M22 100 A78 78 0 0 1 178 100\" fill=\"none\" stroke=\"").append(arcColor).append("\" stroke-width=\"16\" stroke-linecap=\"round\"/>");
+        else if (score > 0) h.append("<path d=\"M22 100 A78 78 0 0 1 ").append(svg(x)).append(" ").append(svg(y))
          .append("\" fill=\"none\" stroke=\"").append(arcColor).append("\" stroke-width=\"16\" stroke-linecap=\"round\"/>");
         h.append("<text x=\"100\" y=\"92\" text-anchor=\"middle\" class=\"score\">").append(score).append("</text>")
          .append("<text x=\"100\" y=\"109\" text-anchor=\"middle\" class=\"of\">von 100</text></svg>");
@@ -584,6 +587,10 @@ public class CleanCodeReport {
         }
         h.append("</main></div><script>").append(JS).append("</script></body></html>");
         return h.toString();
+    }
+
+    static String svg(double d) {
+        return String.format(Locale.ROOT, "%.2f", d);
     }
 
     static String fmt(double d) {
