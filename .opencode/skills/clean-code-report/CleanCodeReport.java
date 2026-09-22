@@ -86,61 +86,60 @@ public class CleanCodeReport {
     // ---- Der Katalog ------------------------------------------------------------
 
     enum Family {
-        BLOATER("🎈", "Bloaters", "Code, der so groß geworden ist, dass ihn niemand mehr auf einmal überblickt.", 30),
-        OO("🧩", "Object-Orientation Abusers", "Objekte, die keine sind: Typprüfungen statt Polymorphismus, Zustand am falschen Ort, offene Daten.", 15),
-        DISPENSABLE("🗑️", "Dispensables", "Alles, was weg kann, ohne dass etwas fehlt: Kommentare, Kopien, Leichen.", 25),
-        COUPLER("🔗", "Couplers", "Klassen, die zu viel voneinander wissen und in fremden Daten wühlen.", 15),
-        READABILITY("👓", "Readability", "Clean Code: Struktur und Namen, die man beim ersten Lesen versteht.", 30),
-        TEST("🧪", "Test Smells", "Tests, die nicht sagen, was sie prüfen, oder es gar nicht tun.", 15);
+        BLOATER("🎈", "Bloaters", "Code, der so groß geworden ist, dass ihn niemand mehr auf einmal überblickt."),
+        OO("🧩", "Object-Orientation Abusers", "Objekte, die keine sind: Typprüfungen statt Polymorphismus, Zustand am falschen Ort, offene Daten."),
+        DISPENSABLE("🗑️", "Dispensables", "Alles, was weg kann, ohne dass etwas fehlt: Kommentare, Kopien, Leichen."),
+        COUPLER("🔗", "Couplers", "Klassen, die zu viel voneinander wissen und in fremden Daten wühlen."),
+        READABILITY("👓", "Readability", "Clean Code: Struktur und Namen, die man beim ersten Lesen versteht."),
+        TEST("🧪", "Test Smells", "Tests, die nicht sagen, was sie prüfen, oder es gar nicht tun.");
 
         final String emoji, title, about;
-        final double cap;
-        Family(String emoji, String title, String about, double cap) { this.emoji = emoji; this.title = title; this.about = about; this.cap = cap; }
+        Family(String emoji, String title, String about) { this.emoji = emoji; this.title = title; this.about = about; }
     }
 
+    /** Jedes Monster: Familie, Name, Regel, was ein Fund die Familie kostet, und das Refactoring dagegen. */
     enum Smell {
         // Bloaters
-        LONG_METHOD(Family.BLOATER, "🐍", "Die Schlange", "Long Method", "Methode mit mehr als 20 Codezeilen", "2 + 1 je weitere 5 Zeilen, höchstens 15", "Extract Method: eine Methode, eine Abstraktionsebene", 15),
-        LARGE_CLASS(Family.BLOATER, "🏰", "Die Burg", "Large Class", "Klasse mit mehr als 200 Zeilen", "5 + 1 je weitere 50 Zeilen, höchstens 10", "Extract Class: jede Klasse eine Verantwortung", 10),
-        LONG_PARAMS(Family.BLOATER, "🎒", "Der Kofferträger", "Long Parameter List", "mehr als drei Parameter; Konstruktoren und Fabriken dürfen vier", "2 je Methode, höchstens 8", "Introduce Parameter Object oder Preserve Whole Object", 8),
-        JUGGLER(Family.BLOATER, "🤹", "Der Jongleur", "Too Many Temps", "mehr als fünf lokale Variablen in einer Methode (Schleifenvariablen zählen nicht), oder eine Variable, die dreimal neu belegt wird", "1 je Variable über fünf; 2 je Mehrzweck-Variable; höchstens 10", "Replace Temp with Query, Split Temporary Variable, Extract Method", 10),
-        PRIMITIVE(Family.BLOATER, "🪨", "Der Steinzeitmensch", "Primitive Obsession", "String oder int als Typ-Code: type, kind, status, state, mode, category, role, unit, currency", "2 je Feld oder Parameter, höchstens 8", "Replace Type Code with Enum, Replace Data Value with Object", 8),
-        CLUMP(Family.BLOATER, "🧑‍🤝‍🧑", "Die Clique", "Data Clumps", "dieselben drei oder mehr Parameter in mehreren Methoden", "3 je Clique, höchstens 9", "Introduce Parameter Object: die Clique wird eine Klasse", 9),
+        LONG_METHOD(Family.BLOATER, "🐍", "Die Schlange", "Long Method", "Methode mit mehr als 20 Codezeilen", "5, dazu 1 je zwei Zeilen über 20, höchstens 50", "Extract Method: eine Methode, eine Abstraktionsebene"),
+        LARGE_CLASS(Family.BLOATER, "🏰", "Die Burg", "Large Class", "Klasse mit mehr als 200 Zeilen, Testklasse mit mehr als 400", "15, dazu 1 je 20 Zeilen darüber, höchstens 40", "Extract Class: jede Klasse eine Verantwortung"),
+        LONG_PARAMS(Family.BLOATER, "🎒", "Der Kofferträger", "Long Parameter List", "mehr als drei Parameter; Konstruktoren und Fabriken dürfen vier", "10 je Methode", "Introduce Parameter Object oder Preserve Whole Object"),
+        JUGGLER(Family.BLOATER, "🤹", "Der Jongleur", "Too Many Temps", "mehr als fünf lokale Variablen in einer Methode (Schleifenvariablen zählen nicht), oder eine Variable, die dreimal neu belegt wird", "5 je Variable über fünf, höchstens 40; 10 je Mehrzweck-Variable", "Replace Temp with Query, Split Temporary Variable, Extract Method"),
+        PRIMITIVE(Family.BLOATER, "🪨", "Der Steinzeitmensch", "Primitive Obsession", "String oder int als Typ-Code: type, kind, status, state, mode, category, role, unit, currency", "10 je Feld oder Parameter", "Replace Type Code with Enum, Replace Data Value with Object"),
+        CLUMP(Family.BLOATER, "🧑‍🤝‍🧑", "Die Clique", "Data Clumps", "dieselben drei oder mehr Parameter in mehreren Methoden", "15 je Clique", "Introduce Parameter Object: die Clique wird eine Klasse"),
         // Object-Orientation Abusers
-        SWITCH(Family.OO, "🚦", "Der Weichensteller", "Switch Statements", "ein Wert dreimal mit festen Werten verglichen, switch über Text, switch über denselben Wert in mehreren Methoden, zwei instanceof in einer Methode", "3 je Fund, 4 je wiederholtem switch, höchstens 12", "Replace Conditional with Polymorphism, Replace Type Code with State/Strategy", 12),
-        CAMPER(Family.OO, "🏕️", "Der Camper", "Temporary Field", "Feld, das nur eine einzige Methode benutzt und das sie erst setzt, bevor sie es liest", "2 je Feld, höchstens 6", "Extract Class oder lokale Variable: das Feld zieht dorthin, wo es lebt", 6),
-        EXHIBITIONIST(Family.OO, "🩲", "Der Exhibitionist", "Public Mutable Field", "öffentliches, veränderbares Feld", "2 je Feld, 3 wenn static, höchstens 6", "Encapsulate Field: private, Verhalten statt Getter und Setter", 6),
-        TRAP(Family.OO, "🪤", "Die Falle", "Reference Comparison", "String mit == oder != verglichen", "3 je Vergleich, höchstens 9", "equals(): Objekte vergleichen, nicht Referenzen", 9),
+        SWITCH(Family.OO, "🚦", "Der Weichensteller", "Switch Statements", "ein Wert dreimal mit festen Werten verglichen, switch über Text, switch über denselben Wert in mehreren Methoden, zwei instanceof in einer Methode", "20 je Fund, 25 je wiederholtem switch", "Replace Conditional with Polymorphism, Replace Type Code with State/Strategy"),
+        CAMPER(Family.OO, "🏕️", "Der Camper", "Temporary Field", "Feld, das nur eine einzige Methode benutzt und das sie erst setzt, bevor sie es liest", "15 je Feld", "Extract Class oder lokale Variable: das Feld zieht dorthin, wo es lebt"),
+        EXHIBITIONIST(Family.OO, "🩲", "Der Exhibitionist", "Public Mutable Field", "öffentliches, veränderbares Feld", "15 je Feld, 20 wenn static", "Encapsulate Field: private, Verhalten statt Getter und Setter"),
+        TRAP(Family.OO, "🪤", "Die Falle", "Reference Comparison", "String mit == oder != verglichen", "20 je Vergleich", "equals(): Objekte vergleichen, nicht Referenzen"),
         // Dispensables
-        TWINS(Family.DISPENSABLE, "👯", "Die Zwillinge", "Duplicate Code", "vier gleiche Codezeilen in Folge, auch über Dateien hinweg", "4 je Block, höchstens 16", "Extract Method: einmal schreiben, zweimal rufen", 16),
-        ZOMBIE(Family.DISPENSABLE, "🧟", "Der Zombie", "Dead Code", "auskommentierter Code, private Methoden und Felder ohne Nutzer, ungenutzte Imports, Code nach return", "3 je Methode, 2 je Feld oder Codeleiche, 0,5 je Import, höchstens 10", "Löschen. Git erinnert sich.", 10),
-        COMMENT(Family.DISPENSABLE, "🧸", "Der Erklärbär", "Comments", "kurzer Kommentar im Methodenrumpf (bis acht Wörter), der eine Zeile erklärt oder den Code wiederholt; lange Warum-Kommentare sind erlaubt", "1 je Kommentar, 0,5 wenn er nur wiederholt, höchstens 6", "Extract Variable oder Rename, dann den Kommentar löschen", 6),
-        DEO(Family.DISPENSABLE, "🧴", "Der Deo-Kommentar", "Comments as Deodorant", "Etikett-Kommentar im Rumpf, der einen Absatz aus drei oder mehr Zeilen einleitet (ein Prosa-Kommentar erst ab acht Zeilen)", "2 je Absatz, höchstens 8", "Extract Method: der Kommentar ist der Name der neuen Methode", 8),
-        LEAFLET(Family.DISPENSABLE, "💊", "Der Beipackzettel", "Comment Instead of Name", "Kommentar über einer Methode mit generischem Namen (helper, process, test5) oder einem kryptischen Feld; kurzes Etikett (bis sechs Wörter) über einem Namen, der es nicht trägt", "2 je Fund, höchstens 8", "Rename: die Wörter aus dem Kommentar in den Namen, dann den Kommentar löschen", 8),
-        SPECULATIVE(Family.DISPENSABLE, "🔮", "Der Wahrsager", "Speculative Generality", "Parameter, den die Methode nie benutzt", "2 je Parameter, höchstens 6", "Remove Parameter: bauen, was gebraucht wird, nicht, was einmal gebraucht werden könnte", 6),
-        LAZY(Family.DISPENSABLE, "🦥", "Der Faulpelz", "Lazy Class", "Klasse mit höchstens einer Methode, höchstens einem Feld und unter 15 Zeilen", "2 je Klasse, höchstens 4", "Inline Class: die Klasse zieht in ihren einzigen Nutzer", 4),
-        DATA_CLASS(Family.DISPENSABLE, "🗂️", "Der Karteikasten", "Data Class", "Klasse nur aus Feldern, Konstruktoren, Gettern und Settern", "2 je Klasse, höchstens 4", "Move Method: das Verhalten zu den Daten holen", 4),
+        TWINS(Family.DISPENSABLE, "👯", "Die Zwillinge", "Duplicate Code", "vier gleiche Codezeilen in Folge, auch über Dateien hinweg", "20 je Block", "Extract Method: einmal schreiben, zweimal rufen"),
+        ZOMBIE(Family.DISPENSABLE, "🧟", "Der Zombie", "Dead Code", "auskommentierter Code, private Methoden und Felder ohne Nutzer, ungenutzte Imports, Code nach return", "15 je Methode, 10 je Feld oder Codeleiche, 3 je Import", "Löschen. Git erinnert sich."),
+        COMMENT(Family.DISPENSABLE, "🧸", "Der Erklärbär", "Comments", "kurzer Kommentar im Methodenrumpf (bis acht Wörter), der eine Zeile erklärt oder den Code wiederholt; lange Warum-Kommentare sind erlaubt", "5 je Kommentar, 3 wenn er nur wiederholt", "Extract Variable oder Rename, dann den Kommentar löschen"),
+        DEO(Family.DISPENSABLE, "🧴", "Der Deo-Kommentar", "Comments as Deodorant", "Etikett-Kommentar im Rumpf, der einen Absatz aus drei oder mehr Zeilen einleitet (ein Prosa-Kommentar erst ab acht Zeilen)", "10 je Absatz", "Extract Method: der Kommentar ist der Name der neuen Methode"),
+        LEAFLET(Family.DISPENSABLE, "💊", "Der Beipackzettel", "Comment Instead of Name", "Kommentar über einer Methode mit generischem Namen (helper, process, test5) oder einem kryptischen Feld; kurzes Etikett (bis sechs Wörter) über einem Namen, der es nicht trägt", "10 je Fund", "Rename: die Wörter aus dem Kommentar in den Namen, dann den Kommentar löschen"),
+        SPECULATIVE(Family.DISPENSABLE, "🔮", "Der Wahrsager", "Speculative Generality", "Parameter, den die Methode nie benutzt", "10 je Parameter", "Remove Parameter: bauen, was gebraucht wird, nicht, was einmal gebraucht werden könnte"),
+        LAZY(Family.DISPENSABLE, "🦥", "Der Faulpelz", "Lazy Class", "Klasse mit höchstens einer Methode, höchstens einem Feld und unter 15 Zeilen", "10 je Klasse", "Inline Class: die Klasse zieht in ihren einzigen Nutzer"),
+        DATA_CLASS(Family.DISPENSABLE, "🗂️", "Der Karteikasten", "Data Class", "Klasse nur aus Feldern, Konstruktoren, Gettern und Settern", "10 je Klasse", "Move Method: das Verhalten zu den Daten holen"),
         // Couplers
-        ENVY(Family.COUPLER, "👀", "Der Neider", "Feature Envy", "Methode greift dreimal oder öfter auf die Daten eines fremden Objekts zu und seltener auf eigene", "3 je Methode, höchstens 12", "Move Method: die Methode zieht zu den Daten, die sie benutzt", 12),
-        CHAIN(Family.COUPLER, "⛓️", "Die Kette", "Message Chains", "drei Aufrufe in Folge, davon zwei Getter: a.getB().getC().getD()", "2 je Kette, höchstens 8", "Hide Delegate: der Nachbar liefert, was du brauchst", 8),
-        MIDDLE_MAN(Family.COUPLER, "📞", "Der Vermittler", "Middle Man", "mehr als die Hälfte der Methoden reicht nur an ein Feld weiter", "3 je Klasse, höchstens 6", "Remove Middle Man: direkt mit dem Objekt reden", 6),
+        ENVY(Family.COUPLER, "👀", "Der Neider", "Feature Envy", "Methode greift dreimal oder öfter auf die Daten eines fremden Objekts zu und seltener auf eigene", "25 je Methode", "Move Method: die Methode zieht zu den Daten, die sie benutzt"),
+        CHAIN(Family.COUPLER, "⛓️", "Die Kette", "Message Chains", "drei Aufrufe in Folge, davon zwei Getter: a.getB().getC().getD()", "15 je Kette", "Hide Delegate: der Nachbar liefert, was du brauchst"),
+        MIDDLE_MAN(Family.COUPLER, "📞", "Der Vermittler", "Middle Man", "mehr als die Hälfte der Methoden reicht nur an ein Feld weiter", "20 je Klasse", "Remove Middle Man: direkt mit dem Objekt reden"),
         // Readability
-        ARROW(Family.READABILITY, "🏹", "Der Pfeil", "Deep Nesting", "mehr als drei Ebenen verschachtelt", "3 je Ebene über drei, höchstens 12", "Guard Clauses, Extract Method, Decompose Conditional", 12),
-        COMPLEX(Family.READABILITY, "🌀", "Der Strudel", "High Cyclomatic Complexity", "zyklomatische Komplexität über 10", "1 je Punkt über 10, höchstens 12", "Extract Method, Map statt if-Kette, Polymorphismus", 12),
-        MAGIC(Family.READABILITY, "🎩", "Der Zauberer", "Magic Numbers and Strings", "Zahlen außer 0 und 1 mitten in Ausdrücken; Texte, die verglichen werden oder mehrfach vorkommen. Nicht in Tests, nicht in main, nicht als Initialwert einer benannten Variablen", "1 je Zahl, 1 je verglichenem Text, 0,5 je wiederholtem Text, höchstens 12", "Extract Constant: der Name sagt, was der Wert bedeutet", 12),
-        CRYPTIC(Family.READABILITY, "🕵️", "Agent X", "Bad Names", "Namen mit ein oder zwei Zeichen, tmp, data, foo, doIt, helper, Namen mit Zahl am Ende", "1 je Variable, 2 je Methode oder Klasse, höchstens 12", "Rename: der Name sagt, was das Ding ist oder tut", 12),
-        PRINTER(Family.READABILITY, "🖨️", "Der Drucker", "Console Output", "System.out oder System.err im Produktivcode außerhalb von main", "2 je Aufruf, höchstens 6", "Rückgabewert, Exception oder Logger", 6),
-        BLACK_HOLE(Family.READABILITY, "🕳️", "Das Schwarze Loch", "Exception Swallowing", "leerer catch, catch mit return, catch mit nur printStackTrace, catch (Exception) oder (Throwable)", "4 leer, 3 mit return, 2 sonst, höchstens 12", "Behandeln, weiterwerfen oder gar nicht fangen. Nie in einen Rückgabewert verwandeln.", 12),
-        FLAG(Family.READABILITY, "🔀", "Der Schalter", "Flag Argument", "boolean-Parameter, der die Methode umschaltet", "2 je Parameter, höchstens 6", "Zwei Methoden statt einem Schalter, oder ein Enum", 6),
+        ARROW(Family.READABILITY, "🏹", "Der Pfeil", "Deep Nesting", "mehr als drei Ebenen verschachtelt", "15 je Ebene über drei, höchstens 45", "Guard Clauses, Extract Method, Decompose Conditional"),
+        COMPLEX(Family.READABILITY, "🌀", "Der Strudel", "High Cyclomatic Complexity", "zyklomatische Komplexität über 10", "3 je Punkt über 10, höchstens 40", "Extract Method, Map statt if-Kette, Polymorphismus"),
+        MAGIC(Family.READABILITY, "🎩", "Der Zauberer", "Magic Numbers and Strings", "Zahlen außer 0 und 1 mitten in Ausdrücken; Texte, die verglichen werden oder mehrfach vorkommen. Nicht in Tests, nicht in main, nicht als Initialwert einer benannten Variablen", "4 je Zahl, 4 je verglichenem Text, 2 je wiederholtem Text", "Extract Constant: der Name sagt, was der Wert bedeutet"),
+        CRYPTIC(Family.READABILITY, "🕵️", "Agent X", "Bad Names", "Namen mit ein oder zwei Zeichen, tmp, data, foo, doIt, helper, Namen mit Zahl am Ende", "3 je Variable, Feld oder Parameter, 8 je Methode oder Klasse", "Rename: der Name sagt, was das Ding ist oder tut"),
+        PRINTER(Family.READABILITY, "🖨️", "Der Drucker", "Console Output", "System.out oder System.err im Produktivcode außerhalb von main", "10 je Aufruf", "Rückgabewert, Exception oder Logger"),
+        BLACK_HOLE(Family.READABILITY, "🕳️", "Das Schwarze Loch", "Exception Swallowing", "leerer catch, catch mit return, catch mit nur printStackTrace, catch (Exception) oder (Throwable)", "20 leer, 15 mit return, 10 sonst", "Behandeln, weiterwerfen oder gar nicht fangen. Nie in einen Rückgabewert verwandeln."),
+        FLAG(Family.READABILITY, "🔀", "Der Schalter", "Flag Argument", "boolean-Parameter, der die Methode umschaltet", "10 je Parameter", "Zwei Methoden statt einem Schalter, oder ein Enum"),
         // Test Smells
-        TEST_GRUMP(Family.TEST, "🧪", "Der Test-Muffel", "Anonymous Test, Missing Assertion, Eager Test", "Tests namens test1, Tests ohne Prüfung, Tests mit mehr als acht Prüfungen", "1 namenlos, 3 ohne Prüfung, 2 gierig, höchstens 12", "Ein Test, eine Regel, ein Name, der sie nennt", 12),
-        ACTOR(Family.TEST, "🎭", "Der Schauspieler", "Conditional Test Logic, Sleepy Test, Ignored Test", "if oder switch im Test, Schleife im Test, Thread.sleep, @Ignore, System.out im Test", "2 je if, 1 je Schleife, 2 je sleep oder @Ignore, 1 je System.out, höchstens 8", "Logik raus, Parametrisierung rein. @Ignore heißt löschen oder fixen.", 8);
+        TEST_GRUMP(Family.TEST, "🧪", "Der Test-Muffel", "Anonymous Test, Missing Assertion, Eager Test", "Tests namens test1, Tests ohne Prüfung, Tests mit mehr als acht Prüfungen", "5 namenlos, 15 ohne Prüfung, 10 gierig", "Ein Test, eine Regel, ein Name, der sie nennt"),
+        ACTOR(Family.TEST, "🎭", "Der Schauspieler", "Conditional Test Logic, Sleepy Test, Ignored Test", "if oder switch im Test, Schleife im Test, Thread.sleep, @Ignore, System.out im Test", "10 je if, 5 je Schleife, 10 je sleep oder @Ignore, 5 je System.out", "Logik raus, Parametrisierung rein. @Ignore heißt löschen oder fixen.");
 
         final Family family;
-        final String emoji, monster, smell, rule, points, fix;
-        final double cap;
-        Smell(Family family, String emoji, String monster, String smell, String rule, String points, String fix, double cap) {
-            this.family = family; this.emoji = emoji; this.monster = monster; this.smell = smell; this.rule = rule; this.points = points; this.fix = fix; this.cap = cap;
+        final String emoji, monster, smell, rule, cost, fix;
+        Smell(Family family, String emoji, String monster, String smell, String rule, String cost, String fix) {
+            this.family = family; this.emoji = emoji; this.monster = monster; this.smell = smell; this.rule = rule; this.cost = cost; this.fix = fix;
         }
     }
 
@@ -388,7 +387,7 @@ public class CleanCodeReport {
         for (Object[] o : stringLiterals) {
             boolean compared = (Boolean) o[4];
             if (!compared && count.get((String) o[3]) < 2) continue;
-            add(Smell.MAGIC, (Source) o[0], (Integer) o[2], "Text " + o[3] + " in " + ((Method) o[1]).label() + (compared ? " wird verglichen" : " kommt " + count.get((String) o[3]) + "-mal vor"), compared ? 1 : 0.5);
+            add(Smell.MAGIC, (Source) o[0], (Integer) o[2], "Text " + o[3] + " in " + ((Method) o[1]).label() + (compared ? " wird verglichen" : " kommt " + count.get((String) o[3]) + "-mal vor"), compared ? 4 : 2);
         }
     }
 
@@ -741,76 +740,76 @@ public class CleanCodeReport {
         if (b == null) return;
         boolean testCode = src.test || m.test;
 
-        if (m.codeLines > 20) add(Smell.LONG_METHOD, src, m.start, m.label() + " hat " + m.codeLines + " Codezeilen", Math.min(Smell.LONG_METHOD.cap, 2 + (m.codeLines - 20) / 5.0));
-        if (m.depth > 3) add(Smell.ARROW, src, m.start, m.label() + " verschachtelt " + m.depth + " Ebenen tief", Math.min(Smell.ARROW.cap, 3.0 * (m.depth - 3)));
-        if (m.complexity > 10) add(Smell.COMPLEX, src, m.start, m.label() + " hat Komplexität " + m.complexity, Math.min(Smell.COMPLEX.cap, (double) (m.complexity - 10)));
+        if (m.codeLines > 20) add(Smell.LONG_METHOD, src, m.start, m.label() + " hat " + m.codeLines + " Codezeilen", Math.min(50, 5 + (m.codeLines - 20) / 2.0));
+        if (m.depth > 3) add(Smell.ARROW, src, m.start, m.label() + " verschachtelt " + m.depth + " Ebenen tief", Math.min(45, 15.0 * (m.depth - 3)));
+        if (m.complexity > 10) add(Smell.COMPLEX, src, m.start, m.label() + " hat Komplexität " + m.complexity, Math.min(40, 3.0 * (m.complexity - 10)));
         boolean builder = m.ctor || (m.isStatic && m.name.matches("(create|of|with|from|build|new)\\w*"));
-        if (!src.test && m.params.size() > (builder ? 4 : 3)) add(Smell.LONG_PARAMS, src, m.start, m.label() + " nimmt " + m.params.size() + " Parameter", 2);
+        if (!src.test && m.params.size() > (builder ? 4 : 3)) add(Smell.LONG_PARAMS, src, m.start, m.label() + " nimmt " + m.params.size() + " Parameter", 10);
 
         List<String[]> temps = b.locals.stream().filter(l -> !l[3].equals("loop")).collect(Collectors.toList());
         if (temps.size() > 5) {
             String names = temps.stream().map(l -> l[0]).limit(6).collect(Collectors.joining(", ")) + (temps.size() > 6 ? " …" : "");
-            add(Smell.JUGGLER, src, m.start, m.label() + " jongliert mit " + temps.size() + " Variablen: " + names, Math.min(Smell.JUGGLER.cap, 1.0 + (temps.size() - 5)));
+            add(Smell.JUGGLER, src, m.start, m.label() + " jongliert mit " + temps.size() + " Variablen: " + names, Math.min(40, 5.0 * (temps.size() - 5)));
         }
         for (Map.Entry<String, Integer> e : b.assigns.entrySet()) {
             if (e.getValue() >= 3 && b.locals.stream().anyMatch(l -> l[0].equals(e.getKey())))
-                add(Smell.JUGGLER, src, lineOfLocal(b, e.getKey(), m.start), "Variable " + e.getKey() + " in " + m.label() + " wird " + e.getValue() + "-mal neu belegt: eine Variable, ein Zweck", 2);
+                add(Smell.JUGGLER, src, lineOfLocal(b, e.getKey(), m.start), "Variable " + e.getKey() + " in " + m.label() + " wird " + e.getValue() + "-mal neu belegt: eine Variable, ein Zweck", 10);
         }
 
-        if (!m.ctor && !m.test && !m.isOverride && genericMethod(m.name)) add(Smell.CRYPTIC, src, m.start, "Methode " + m.label() + " sagt nicht, was sie tut", 2);
-        for (Param p : m.params) if (crypticVar(p.name())) add(Smell.CRYPTIC, src, m.start, "Parameter " + p.name() + " in " + m.label(), 1);
+        if (!m.ctor && !m.test && !m.isOverride && genericMethod(m.name)) add(Smell.CRYPTIC, src, m.start, "Methode " + m.label() + " sagt nicht, was sie tut", 8);
+        for (Param p : m.params) if (crypticVar(p.name())) add(Smell.CRYPTIC, src, m.start, "Parameter " + p.name() + " in " + m.label(), 3);
         Set<String> seen = new HashSet<>();
-        for (String[] l : b.locals) if (crypticVar(l[0]) && seen.add(l[0])) add(Smell.CRYPTIC, src, Integer.parseInt(l[2]), "Variable " + l[0] + " in " + m.label(), 1);
+        for (String[] l : b.locals) if (crypticVar(l[0]) && seen.add(l[0])) add(Smell.CRYPTIC, src, Integer.parseInt(l[2]), "Variable " + l[0] + " in " + m.label(), 3);
 
         if (!testCode) {
             if (!m.ctor && !m.isOverride && !m.name.startsWith("set"))
-                for (Param p : m.params) if (p.type().matches("boolean|Boolean")) add(Smell.FLAG, src, m.start, "Parameter boolean " + p.name() + " in " + m.label() + ": die Methode tut zwei Dinge", 2);
+                for (Param p : m.params) if (p.type().matches("boolean|Boolean")) add(Smell.FLAG, src, m.start, "Parameter boolean " + p.name() + " in " + m.label() + ": die Methode tut zwei Dinge", 10);
             for (Param p : m.params) if (p.type().matches("String|int|long|char|Integer") && TYPE_CODE.matcher(p.name()).find())
-                add(Smell.PRIMITIVE, src, m.start, "Parameter " + p.type() + " " + p.name() + " in " + m.label() + ": ein Enum sagt, welche Werte erlaubt sind", 2);
+                add(Smell.PRIMITIVE, src, m.start, "Parameter " + p.type() + " " + p.name() + " in " + m.label() + ": ein Enum sagt, welche Werte erlaubt sind", 10);
             if (!m.name.equals("main")) for (Object[] lit : b.literals) {
                 if ((Boolean) lit[2]) stringLiterals.add(new Object[]{src, m, lit[0], lit[1], lit[3]});
-                else add(Smell.MAGIC, src, (Integer) lit[0], "Zahl " + lit[1] + " in " + m.label(), 1);
+                else add(Smell.MAGIC, src, (Integer) lit[0], "Zahl " + lit[1] + " in " + m.label(), 4);
             }
             for (Object[] c : b.catches) {
                 int kind = (Integer) c[2]; String type = (String) c[1];
-                if (kind == 0) add(Smell.BLACK_HOLE, src, (Integer) c[0], "catch (" + type + ") schluckt den Fehler: leerer Block", 4);
-                else if (kind == 1) add(Smell.BLACK_HOLE, src, (Integer) c[0], "catch (" + type + ") verwandelt den Fehler in einen Rückgabewert", 3);
-                else if (kind == 2) add(Smell.BLACK_HOLE, src, (Integer) c[0], "catch (" + type + ") druckt den Fehler nur aus", 2);
-                else if (kind == 3) add(Smell.BLACK_HOLE, src, (Integer) c[0], "catch (" + type + ") fängt alles, auch Programmierfehler", 2);
+                if (kind == 0) add(Smell.BLACK_HOLE, src, (Integer) c[0], "catch (" + type + ") schluckt den Fehler: leerer Block", 20);
+                else if (kind == 1) add(Smell.BLACK_HOLE, src, (Integer) c[0], "catch (" + type + ") verwandelt den Fehler in einen Rückgabewert", 15);
+                else if (kind == 2) add(Smell.BLACK_HOLE, src, (Integer) c[0], "catch (" + type + ") druckt den Fehler nur aus", 10);
+                else if (kind == 3) add(Smell.BLACK_HOLE, src, (Integer) c[0], "catch (" + type + ") fängt alles, auch Programmierfehler", 10);
             }
-            if (!m.name.equals("main")) for (Integer l : b.prints) add(Smell.PRINTER, src, l, src.snippet(l), 2);
-            for (Integer l : b.stringEq) add(Smell.TRAP, src, l, "String mit == verglichen: " + src.snippet(l), 3);
+            if (!m.name.equals("main")) for (Integer l : b.prints) add(Smell.PRINTER, src, l, src.snippet(l), 10);
+            for (Integer l : b.stringEq) add(Smell.TRAP, src, l, "String mit == verglichen: " + src.snippet(l), 20);
             for (Map.Entry<String, List<Integer>> e : b.comparisons.entrySet())
-                if (e.getValue().size() >= 3) add(Smell.SWITCH, src, e.getValue().get(0), e.getKey() + " wird in " + m.label() + " " + e.getValue().size() + "-mal mit festen Werten verglichen", 3);
-            for (Object[] s : b.switches) if ((Boolean) s[3]) add(Smell.SWITCH, src, (Integer) s[0], "switch über Text in " + m.label() + ": ein Enum oder Polymorphismus", 3);
-            if (b.instanceofs.size() >= 2) add(Smell.SWITCH, src, b.instanceofs.get(0), m.label() + " prüft " + b.instanceofs.size() + "-mal instanceof", 3);
+                if (e.getValue().size() >= 3) add(Smell.SWITCH, src, e.getValue().get(0), e.getKey() + " wird in " + m.label() + " " + e.getValue().size() + "-mal mit festen Werten verglichen", 20);
+            for (Object[] s : b.switches) if ((Boolean) s[3]) add(Smell.SWITCH, src, (Integer) s[0], "switch über Text in " + m.label() + ": ein Enum oder Polymorphismus", 20);
+            if (b.instanceofs.size() >= 2) add(Smell.SWITCH, src, b.instanceofs.get(0), m.label() + " prüft " + b.instanceofs.size() + "-mal instanceof", 20);
             if (!m.ctor && !m.name.matches("equals|hashCode|toString|compareTo")) {
                 Map.Entry<String, Integer> top = b.foreign.entrySet().stream().max(Map.Entry.comparingByValue()).orElse(null);
                 if (top != null && top.getValue() >= 3 && top.getValue() > b.own)
-                    add(Smell.ENVY, src, m.start, m.label() + " greift " + top.getValue() + "-mal auf Daten von " + top.getKey() + " zu, " + b.own + "-mal auf eigene", 3);
+                    add(Smell.ENVY, src, m.start, m.label() + " greift " + top.getValue() + "-mal auf Daten von " + top.getKey() + " zu, " + b.own + "-mal auf eigene", 25);
             }
-            for (Object[] ch : b.chains) add(Smell.CHAIN, src, (Integer) ch[0], "Kette mit " + ch[2] + " Gliedern: " + ch[1], 2);
+            for (Object[] ch : b.chains) add(Smell.CHAIN, src, (Integer) ch[0], "Kette mit " + ch[2] + " Gliedern: " + ch[1], 15);
             if (!m.isOverride && !m.isAbstract && !m.ctor && b.statements > 0 && !m.name.equals("main"))
-                for (Param p : m.params) if (!b.identifiers.contains(p.name())) add(Smell.SPECULATIVE, src, m.start, "Parameter " + p.name() + " in " + m.label() + " wird nie benutzt", 2);
+                for (Param p : m.params) if (!b.identifiers.contains(p.name())) add(Smell.SPECULATIVE, src, m.start, "Parameter " + p.name() + " in " + m.label() + " wird nie benutzt", 10);
         }
-        for (Integer l : b.unreachable) add(Smell.ZOMBIE, src, l, "Code nach return, throw oder break läuft nie: " + src.snippet(l), 2);
+        for (Integer l : b.unreachable) add(Smell.ZOMBIE, src, l, "Code nach return, throw oder break läuft nie: " + src.snippet(l), 10);
 
         if (m.test) {
             if (m.name.matches("^(test|check|verify|it|should|case)\\d*$") || m.name.matches("^test[A-Z]?$"))
-                add(Smell.TEST_GRUMP, src, m.start, m.label() + ": der Name sagt nicht, welche Regel geprüft wird", 1);
+                add(Smell.TEST_GRUMP, src, m.start, m.label() + ": der Name sagt nicht, welche Regel geprüft wird", 5);
             int asserts = b.asserts;
             for (Method other : m.owner.methods) if (other != m && other.body != null && b.invoked.contains(other.name)) asserts += other.body.asserts;
-            if (asserts == 0 && !m.expectsException) add(Smell.TEST_GRUMP, src, m.start, m.label() + " prüft nichts", 3);
-            if (asserts > 8) add(Smell.TEST_GRUMP, src, m.start, m.label() + " prüft " + asserts + " Dinge auf einmal", 2);
-            if (m.ignored) add(Smell.ACTOR, src, m.declLine, m.label() + " ist abgeschaltet: der Test läuft nicht", 2);
+            if (asserts == 0 && !m.expectsException) add(Smell.TEST_GRUMP, src, m.start, m.label() + " prüft nichts", 15);
+            if (asserts > 8) add(Smell.TEST_GRUMP, src, m.start, m.label() + " prüft " + asserts + " Dinge auf einmal", 10);
+            if (m.ignored) add(Smell.ACTOR, src, m.declLine, m.label() + " ist abgeschaltet: der Test läuft nicht", 10);
             Object[] branch = b.logic.stream().filter(l -> !(Boolean) l[1]).findFirst().orElse(null);
             Object[] loop = b.logic.stream().filter(l -> (Boolean) l[1]).findFirst().orElse(null);
-            if (branch != null) add(Smell.ACTOR, src, (Integer) branch[0], m.label() + " verzweigt: ein Test, ein Pfad", 2);
-            else if (loop != null) add(Smell.ACTOR, src, (Integer) loop[0], m.label() + " enthält eine Schleife: jeder Fall ein eigener Test, oder parametrisiert", 1);
-            for (Integer l : b.sleeps) add(Smell.ACTOR, src, l, m.label() + " wartet mit Thread.sleep", 2);
-            for (Integer l : b.prints) add(Smell.ACTOR, src, l, "System.out in " + m.label() + ": ein Test prüft, er druckt nicht", 1);
+            if (branch != null) add(Smell.ACTOR, src, (Integer) branch[0], m.label() + " verzweigt: ein Test, ein Pfad", 10);
+            else if (loop != null) add(Smell.ACTOR, src, (Integer) loop[0], m.label() + " enthält eine Schleife: jeder Fall ein eigener Test, oder parametrisiert", 5);
+            for (Integer l : b.sleeps) add(Smell.ACTOR, src, l, m.label() + " wartet mit Thread.sleep", 10);
+            for (Integer l : b.prints) add(Smell.ACTOR, src, l, "System.out in " + m.label() + ": ein Test prüft, er druckt nicht", 5);
         } else if (src.test) {
-            for (Integer l : b.prints) add(Smell.ACTOR, src, l, "System.out in " + m.label() + ": ein Test prüft, er druckt nicht", 1);
+            for (Integer l : b.prints) add(Smell.ACTOR, src, l, "System.out in " + m.label() + ": ein Test prüft, er druckt nicht", 5);
         }
     }
 
@@ -821,16 +820,16 @@ public class CleanCodeReport {
 
     void classSmells(Source src, Klass k) {
         int limit = k.test ? 400 : 200;
-        if (k.lines() > limit) add(Smell.LARGE_CLASS, src, k.start, k.name + " hat " + k.lines() + " Zeilen", Math.min(Smell.LARGE_CLASS.cap, 5 + (k.lines() - limit) / 50.0));
-        if (CRYPTIC_CLASSES.contains(k.name) || k.name.matches("[A-Za-z]+\\d+")) add(Smell.CRYPTIC, src, k.start, "Klasse " + k.name + " sagt nicht, wofür sie da ist", 2);
+        if (k.lines() > limit) add(Smell.LARGE_CLASS, src, k.start, k.name + " hat " + k.lines() + " Zeilen", Math.min(40, 15 + (k.lines() - limit) / 20.0));
+        if (CRYPTIC_CLASSES.contains(k.name) || k.name.matches("[A-Za-z]+\\d+")) add(Smell.CRYPTIC, src, k.start, "Klasse " + k.name + " sagt nicht, wofür sie da ist", 8);
 
         // Private Methoden ohne Aufrufer
         Set<String> invoked = new HashSet<>();
         for (Method m : src.methods) if (m.body != null) invoked.addAll(m.body.invoked);
-        for (Method m : k.methods) if (m.isPrivate && !m.ctor && !invoked.contains(m.name)) add(Smell.ZOMBIE, src, m.start, "Private Methode " + m.label() + " ruft niemand", 3);
+        for (Method m : k.methods) if (m.isPrivate && !m.ctor && !invoked.contains(m.name)) add(Smell.ZOMBIE, src, m.start, "Private Methode " + m.label() + " ruft niemand", 15);
 
         if (k.test) {
-            if (k.ignored) add(Smell.ACTOR, src, k.start, "Klasse " + k.name + " ist abgeschaltet: kein Test darin läuft", 3);
+            if (k.ignored) add(Smell.ACTOR, src, k.start, "Klasse " + k.name + " ist abgeschaltet: kein Test darin läuft", 15);
             return;
         }
         List<Method> real = k.methods.stream().filter(m -> !m.ctor).collect(Collectors.toList());
@@ -839,9 +838,9 @@ public class CleanCodeReport {
 
         if (fieldsMatter) for (Field f : k.fields) {
             if (f.enumConstant || f.name.equals("serialVersionUID")) continue;
-            if (f.is(Modifier.PUBLIC) && !f.is(Modifier.FINAL)) add(Smell.EXHIBITIONIST, src, f.line, "Feld " + f.name + " ist öffentlich und veränderbar", f.is(Modifier.STATIC) ? 3 : 2);
-            if (crypticVar(f.name)) add(Smell.CRYPTIC, src, f.line, "Feld " + f.name + " in " + k.name, 1);
-            if (f.type.matches("String|int|long|char|Integer") && TYPE_CODE.matcher(f.name).find()) add(Smell.PRIMITIVE, src, f.line, "Feld " + f.type + " " + f.name + " in " + k.name + ": ein Enum sagt, welche Werte erlaubt sind", 2);
+            if (f.is(Modifier.PUBLIC) && !f.is(Modifier.FINAL)) add(Smell.EXHIBITIONIST, src, f.line, "Feld " + f.name + " ist öffentlich und veränderbar", f.is(Modifier.STATIC) ? 20 : 15);
+            if (crypticVar(f.name)) add(Smell.CRYPTIC, src, f.line, "Feld " + f.name + " in " + k.name, 3);
+            if (f.type.matches("String|int|long|char|Integer") && TYPE_CODE.matcher(f.name).find()) add(Smell.PRIMITIVE, src, f.line, "Feld " + f.type + " " + f.name + " in " + k.name + ": ein Enum sagt, welche Werte erlaubt sind", 10);
         }
 
         // Nutzung der privaten Felder: Zombie oder Camper
@@ -851,23 +850,23 @@ public class CleanCodeReport {
             int textual = 0;
             Matcher um = Pattern.compile("\\b" + Pattern.quote(f.name) + "\\b").matcher(src.stripped);
             while (um.find()) textual++;
-            if (users.isEmpty() && textual <= 1) add(Smell.ZOMBIE, src, f.line, "Feld " + f.name + " benutzt niemand", 2);
+            if (users.isEmpty() && textual <= 1) add(Smell.ZOMBIE, src, f.line, "Feld " + f.name + " benutzt niemand", 10);
             else if (users.size() == 1 && !users.get(0).ctor && !f.is(Modifier.STATIC) && !f.initialised && textual <= 1 + countIn(src, users.get(0), f.name) && writtenFirst(src, users.get(0), f.name))
-                add(Smell.CAMPER, src, f.line, "Feld " + f.name + " braucht nur " + users.get(0).label() + ", die es erst setzt: als lokale Variable wäre es zu Hause", 2);
+                add(Smell.CAMPER, src, f.line, "Feld " + f.name + " braucht nur " + users.get(0).label() + ", die es erst setzt: als lokale Variable wäre es zu Hause", 15);
         }
 
         if (!k.isPlainClass()) return;
         boolean hasMain = k.methods.stream().anyMatch(m -> m.name.equals("main"));
         boolean onlyStatic = !real.isEmpty() && real.stream().allMatch(m -> m.isStatic);
         if (real.size() <= 1 && plain.size() <= 1 && k.lines() < 15 && !hasMain && !onlyStatic && k.extendsClause.isEmpty() && !k.implementsSomething && !k.isAbstract)
-            add(Smell.LAZY, src, k.start, k.name + " hat " + real.size() + " Methode" + (real.size() == 1 ? "" : "n") + " und " + k.lines() + " Zeilen", 2);
+            add(Smell.LAZY, src, k.start, k.name + " hat " + real.size() + " Methode" + (real.size() == 1 ? "" : "n") + " und " + k.lines() + " Zeilen", 10);
         if (!plain.isEmpty() && !real.isEmpty() && real.stream().allMatch(m -> isAccessor(m, k)))
-            add(Smell.DATA_CLASS, src, k.start, k.name + " hat nur Daten und keine Regeln: " + real.size() + " Getter und Setter", 2);
+            add(Smell.DATA_CLASS, src, k.start, k.name + " hat nur Daten und keine Regeln: " + real.size() + " Getter und Setter", 10);
         List<Method> candidates = real.stream().filter(m -> !m.isStatic && !m.isAbstract).collect(Collectors.toList());
         List<Method> forwarding = candidates.stream().filter(m -> m.body != null && m.body.delegation != null && isForwarding(m)).collect(Collectors.toList());
         if (candidates.size() >= 3 && forwarding.size() * 2 > candidates.size()) {
             String to = forwarding.stream().map(m -> (String) m.body.delegation[0]).distinct().collect(Collectors.joining(", "));
-            add(Smell.MIDDLE_MAN, src, k.start, k.name + " reicht " + forwarding.size() + " von " + candidates.size() + " Methoden nur an " + to + " weiter", 3);
+            add(Smell.MIDDLE_MAN, src, k.start, k.name + " reicht " + forwarding.size() + " von " + candidates.size() + " Methoden nur an " + to + " weiter", 20);
         }
     }
 
@@ -907,7 +906,7 @@ public class CleanCodeReport {
             Matcher um = Pattern.compile("\\b" + Pattern.quote(imp[0]) + "\\b").matcher(src.stripped);
             int uses = 0;
             while (um.find()) uses++;
-            if (uses <= 1) add(Smell.ZOMBIE, src, Integer.parseInt(imp[1]), "Import " + imp[0] + " benutzt niemand", 0.5);
+            if (uses <= 1) add(Smell.ZOMBIE, src, Integer.parseInt(imp[1]), "Import " + imp[0] + " benutzt niemand", 3);
         }
     }
 
@@ -969,7 +968,7 @@ public class CleanCodeReport {
             List<String> code = b.code;
             if (text.isEmpty()) continue;
             if (!code.isEmpty()) {
-                add(Smell.ZOMBIE, src, first, "Auskommentierter Code: " + shorten(code.get(0)), 2);
+                add(Smell.ZOMBIE, src, first, "Auskommentierter Code: " + shorten(code.get(0)), 10);
                 if (words(text).size() <= words(String.join(" ", code)).size() + 2) continue;
             }
             Method above = null; Field fieldAbove = null;
@@ -983,21 +982,21 @@ public class CleanCodeReport {
                 names.addAll(nameWords(above.owner.name));
                 List<String> uncovered = words(text).stream().filter(w -> !covered(w, names)).collect(Collectors.toList());
                 boolean generic = !above.ctor && (genericMethod(above.name) || (above.test && above.name.matches("^(test|check|verify|it|should|case)\\d*$")));
-                if (generic) add(Smell.LEAFLET, src, above.start, above.label() + " braucht einen Beipackzettel: der Kommentar sagt „" + shorten(text) + "“, der Name nichts", 2);
+                if (generic) add(Smell.LEAFLET, src, above.start, above.label() + " braucht einen Beipackzettel: der Kommentar sagt „" + shorten(text) + "“, der Name nichts", 10);
                 else if (wordCount(text) <= 6 && !uncovered.isEmpty() && !(javadoc && !above.isPrivate))
-                    add(Smell.LEAFLET, src, above.start, above.label() + ": das Etikett „" + shorten(text) + "“ gehört in den Namen", 2);
+                    add(Smell.LEAFLET, src, above.start, above.label() + ": das Etikett „" + shorten(text) + "“ gehört in den Namen", 10);
                 continue;
             }
             if (fullLine && fieldAbove != null) {
-                if (crypticVar(fieldAbove.name)) add(Smell.LEAFLET, src, fieldAbove.line, "Feld " + fieldAbove.name + ": der Kommentar sagt „" + shorten(text) + "“, der Name nicht", 2);
+                if (crypticVar(fieldAbove.name)) add(Smell.LEAFLET, src, fieldAbove.line, "Feld " + fieldAbove.name + ": der Kommentar sagt „" + shorten(text) + "“, der Name nicht", 10);
                 continue;
             }
             Method in = src.methodAt(first);
             if (in == null || first <= in.bodyStart) continue;
             String lower = text.toLowerCase(Locale.ROOT).replaceAll("[^a-z]", "");
             if (in.test && TEST_STAGE.contains(lower)) continue;
-            if (text.matches("(?i)^(todo|fixme|xxx|hack)\\b.*")) { add(Smell.COMMENT, src, first, "„" + shorten(text) + "“: tun oder löschen", 1); continue; }
-            if (!fullLine) { if (label) add(Smell.COMMENT, src, first, "„" + shorten(text) + "“ hängt an einer Zeile: der Code sollte das selbst sagen", 1); continue; }
+            if (text.matches("(?i)^(todo|fixme|xxx|hack)\\b.*")) { add(Smell.COMMENT, src, first, "„" + shorten(text) + "“: tun oder löschen", 5); continue; }
+            if (!fullLine) { if (label) add(Smell.COMMENT, src, first, "„" + shorten(text) + "“ hängt an einer Zeile: der Code sollte das selbst sagen", 5); continue; }
             int following = 0;
             for (int l = last + 1; l <= in.bodyEnd; l++) {
                 String c = src.code(l);
@@ -1007,13 +1006,13 @@ public class CleanCodeReport {
                 following++;
             }
             // Ein Etikett vor drei Zeilen ist eine Methode ohne Namen; ein Absatz Prosa erst vor acht Zeilen.
-            if (following >= (label ? 3 : 8)) { add(Smell.DEO, src, first, "„" + shorten(text) + "“ leitet " + following + " Zeilen ein: das ist eine Methode", 2); continue; }
+            if (following >= (label ? 3 : 8)) { add(Smell.DEO, src, first, "„" + shorten(text) + "“ leitet " + following + " Zeilen ein: das ist eine Methode", 10); continue; }
             if (!label) continue;
             List<String> next = new ArrayList<>();
             for (int l = last + 1; l <= Math.min(last + 1, in.bodyEnd); l++) next.addAll(nameWords(src.code(l).replaceAll("[^A-Za-z_$]+", " ")));
             List<String> ws = words(text);
             boolean repeats = !ws.isEmpty() && ws.stream().allMatch(w -> covered(w, next));
-            add(Smell.COMMENT, src, first, "„" + shorten(text) + "“ " + (repeats ? "wiederholt den Code: löschen" : "erklärt eine Zeile: Extract Variable oder Rename"), repeats ? 0.5 : 1);
+            add(Smell.COMMENT, src, first, "„" + shorten(text) + "“ " + (repeats ? "wiederholt den Code: löschen" : "erklärt eine Zeile: Extract Variable oder Rename"), repeats ? 3 : 5);
         }
     }
 
@@ -1032,7 +1031,7 @@ public class CleanCodeReport {
             if (ms.size() < 2) continue;
             Method first = ms.get(0);
             Source src = sources.stream().filter(s -> s.file.equals(first.file)).findFirst().orElseThrow();
-            add(Smell.CLUMP, src, first.start, e.getKey() + " reisen zusammen durch " + ms.stream().map(Method::label).distinct().collect(Collectors.joining(", ")), 3);
+            add(Smell.CLUMP, src, first.start, e.getKey() + " reisen zusammen durch " + ms.stream().map(Method::label).distinct().collect(Collectors.joining(", ")), 15);
         }
     }
 
@@ -1044,7 +1043,7 @@ public class CleanCodeReport {
             long methods = e.getValue().stream().map(o -> o[1]).distinct().count();
             if (methods < 2) continue;
             Object[] first = e.getValue().get(0);
-            add(Smell.SWITCH, (Source) first[0], (Integer) first[2], "switch über " + e.getKey() + " in " + methods + " Methoden: " + e.getValue().stream().map(o -> ((Method) o[1]).label()).distinct().collect(Collectors.joining(", ")), 4);
+            add(Smell.SWITCH, (Source) first[0], (Integer) first[2], "switch über " + e.getKey() + " in " + methods + " Methoden: " + e.getValue().stream().map(o -> ((Method) o[1]).label()).distinct().collect(Collectors.joining(", ")), 25);
         }
     }
 
@@ -1089,52 +1088,54 @@ public class CleanCodeReport {
                 while (l < mk.length && mk[l]) l++;
                 int[] first = firstOf.get(e.getKey())[start];
                 String where = first == null ? "" : " von " + sources.get(first[0]).file.replaceAll(".*/", "") + ":" + (first[1] + 1);
-                add(Smell.TWINS, src, start + 1, "Zeilen " + (start + 1) + " bis " + l + " sind ein Zwilling" + where, 4);
+                add(Smell.TWINS, src, start + 1, "Zeilen " + (start + 1) + " bis " + l + " sind ein Zwilling" + where, 20);
             }
         }
     }
 
     // ---- Wertung ------------------------------------------------------------------
 
-    /** Strafpunkte je Monster, ungedeckelt: die Summe der Funde. */
-    Map<Smell, Double> rawBySmell() {
-        Map<Smell, Double> p = new EnumMap<>(Smell.class);
-        for (Smell s : Smell.values()) p.put(s, findings.stream().filter(f -> f.smell == s).mapToDouble(Finding::penalty).sum());
-        return p;
+    // Die Rechnung: jede Familie startet mit 100 Punkten, jeder Fund kostet seine Familie Punkte,
+    // unter 0 geht es nicht. Der Punktestand ist der Durchschnitt der bewerteten Familien.
+
+    /** Was die Funde eines Monsters zusammen kosten. */
+    Map<Smell, Double> costBySmell() {
+        Map<Smell, Double> c = new EnumMap<>(Smell.class);
+        for (Smell s : Smell.values()) c.put(s, findings.stream().filter(f -> f.smell == s).mapToDouble(Finding::penalty).sum());
+        return c;
     }
 
-    /** Strafpunkte je Monster, am Deckel des Monsters abgeschnitten. */
-    Map<Smell, Double> penaltyBySmell() {
-        Map<Smell, Double> p = rawBySmell();
-        for (Smell s : Smell.values()) p.put(s, Math.min(s.cap, p.get(s)));
-        return p;
-    }
-
-    /** Strafpunkte je Familie vor dem Familien-Deckel: die Summe der gedeckelten Monster. */
-    Map<Family, Double> rawByFamily() {
-        Map<Smell, Double> p = penaltyBySmell();
+    /** Was die Monster einer Familie zusammen kosten. */
+    Map<Family, Double> costByFamily() {
+        Map<Smell, Double> c = costBySmell();
         Map<Family, Double> f = new EnumMap<>(Family.class);
-        for (Family fam : Family.values()) f.put(fam, Arrays.stream(Smell.values()).filter(s -> s.family == fam).mapToDouble(p::get).sum());
+        for (Family fam : Family.values()) f.put(fam, Arrays.stream(Smell.values()).filter(s -> s.family == fam).mapToDouble(c::get).sum());
         return f;
     }
 
-    /** Strafpunkte je Familie, am Deckel der Familie abgeschnitten. Diese Zahlen ziehen von 100 ab. */
-    Map<Family, Double> penaltyByFamily() {
-        Map<Family, Double> f = rawByFamily();
-        for (Family fam : Family.values()) f.put(fam, Math.min(fam.cap, f.get(fam)));
-        return f;
+    boolean hasTests() { return sources.stream().flatMap(s -> s.methods.stream()).anyMatch(m -> m.test); }
+
+    /** Punkte je Familie, 0 bis 100. Test Smells ohne Tests: nicht bewertet, also kein Eintrag. */
+    Map<Family, Integer> pointsByFamily() {
+        Map<Family, Double> c = costByFamily();
+        Map<Family, Integer> p = new EnumMap<>(Family.class);
+        for (Family fam : Family.values()) {
+            if (fam == Family.TEST && !hasTests()) continue;
+            p.put(fam, (int) Math.max(0, Math.round(100 - c.get(fam))));
+        }
+        return p;
     }
 
     int score() {
-        double total = penaltyByFamily().values().stream().mapToDouble(Double::doubleValue).sum();
-        return (int) Math.max(0, Math.round(100 - total));
+        Map<Family, Integer> p = pointsByFamily();
+        return p.isEmpty() ? 100 : (int) Math.round(p.values().stream().mapToInt(Integer::intValue).average().orElse(100));
     }
 
     static String[] level(int score) {
         if (score >= 90) return new String[]{"🏆", "Clean-Code-Meister", "Hier gibt es nichts zu sehen. Weitergehen."};
-        if (score >= 70) return new String[]{"🔧", "Geselle", "Solide Arbeit. Ein paar Monster lauern noch."};
-        if (score >= 50) return new String[]{"🧹", "Lehrling", "Die Monster haben sich häuslich eingerichtet."};
-        if (score >= 25) return new String[]{"🍝", "Spaghetti-Koch", "Al dente, aber niemand findet den Anfang."};
+        if (score >= 75) return new String[]{"🔧", "Geselle", "Solide Arbeit. Ein paar Monster lauern noch."};
+        if (score >= 60) return new String[]{"🧹", "Lehrling", "Die Monster haben sich häuslich eingerichtet."};
+        if (score >= 40) return new String[]{"🍝", "Spaghetti-Koch", "Al dente, aber niemand findet den Anfang."};
         return new String[]{"🦖", "Legacy-Legende", "Archäologen werden hier eines Tages graben."};
     }
 
@@ -1144,7 +1145,7 @@ public class CleanCodeReport {
             double p = bossPenalty(m);
             if (p > bossPen) { bossPen = p; boss = m; }
         }
-        return bossPen >= 5 ? boss : null;
+        return bossPen >= 25 ? boss : null;
     }
 
     double bossPenalty(Method m) {
@@ -1195,9 +1196,10 @@ public class CleanCodeReport {
     String html(List<int[]> history) {
         int score = score();
         String[] lv = level(score);
-        Map<Smell, Double> pen = penaltyBySmell(), rawSmell = rawBySmell();
-        Map<Family, Double> fpen = penaltyByFamily(), rawFam = rawByFamily();
-        long beaten = Arrays.stream(Smell.values()).filter(s -> pen.get(s) == 0).count();
+        Map<Smell, Double> cost = costBySmell();
+        Map<Family, Double> fcost = costByFamily();
+        Map<Family, Integer> fpts = pointsByFamily();
+        long beaten = Arrays.stream(Smell.values()).filter(s -> cost.get(s) == 0).count();
         String project = root.toAbsolutePath().getFileName().toString();
         String when = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
         Map<String, Integer> fileIndex = new HashMap<>();
@@ -1227,43 +1229,45 @@ public class CleanCodeReport {
             for (int[] hs : history) h.append("<span class=\"pill\">").append(hs[0]).append("</span>");
             h.append("<span class=\"pill now\">").append(score).append("</span></p>");
         }
-        // Die Rechnung: 100 minus die gedeckelten Strafpunkte je Familie
-        h.append("<p class=\"calc\" title=\"Punktestand: 100 minus die Strafpunkte je Familie, jede am Deckel ihrer Familie abgeschnitten\">100");
-        for (Family fam : Family.values()) h.append(" − <span title=\"").append(esc(fam.title)).append("\">").append(fam.emoji).append("</span>").append(fmt(fpen.get(fam)));
-        h.append(" = <b>").append(score).append("</b></p>");
-        h.append(radar(fpen));
+        // Die Rechnung: der Durchschnitt der Familien
+        h.append("<p class=\"calc\" title=\"Punktestand: der Durchschnitt der Punkte je Familie\">(");
+        boolean firstFam = true;
+        for (Family fam : Family.values()) {
+            if (!fpts.containsKey(fam)) continue;
+            h.append(firstFam ? "" : " + ").append("<span title=\"").append(esc(fam.title)).append("\">").append(fam.emoji).append("</span>").append(fpts.get(fam));
+            firstFam = false;
+        }
+        h.append(") / ").append(fpts.size()).append(" = <b>").append(score).append("</b>").append(fpts.containsKey(Family.TEST) ? "" : " <small>Test Smells nicht bewertet: keine Tests</small>").append("</p>");
+        h.append(radar(fpts));
 
         Method boss = boss();
         if (boss != null) {
             double bp = bossPenalty(boss);
-            int hp = (int) Math.min(100, Math.round(bp * 2));
+            int hp = (int) Math.min(100, Math.round(bp));
             h.append("<a class=\"boss\" href=\"#f").append(fileIndex.get(boss.file)).append("-L").append(boss.start).append("\"><p class=\"kicker\">Endgegner</p><p class=\"name\">").append(esc(boss.label())).append("<span class=\"where\">")
              .append(esc(boss.file.replaceAll(".*/", ""))).append(":").append(boss.start).append("</span></p><div class=\"hp\"><div style=\"width:").append(hp).append("%\"></div></div>")
              .append("<p class=\"stats\"><span>").append(boss.codeLines).append(" Zeilen</span><span>Tiefe ").append(boss.depth).append("</span><span>Komplexität ").append(boss.complexity).append("</span><span>")
-             .append(boss.body == null ? 0 : boss.body.locals.size()).append(" Variablen</span><span title=\"Summe der Funde in dieser Methode, ohne Deckel\">−").append(fmt(bp)).append(" roh</span></p></a>");
+             .append(boss.body == null ? 0 : boss.body.locals.size()).append(" Variablen</span><span title=\"Was die Funde in dieser Methode zusammen kosten\">kostet ").append(fmt(bp)).append("</span></p></a>");
         }
         h.append("</div>");
 
         h.append("<nav class=\"list\">");
         if (findings.isEmpty()) h.append("<p class=\"empty\">").append(sources.isEmpty() ? "Unter src/ liegt noch kein Java-Code." : "Kein Monster in Sicht. Alle Regeln erfüllt.").append("</p>");
         for (Family fam : Family.values()) {
-            List<Smell> smells = Arrays.stream(Smell.values()).filter(s -> s.family == fam).sorted(Comparator.comparingDouble((Smell s) -> -pen.get(s))).collect(Collectors.toList());
-            double fp = fpen.get(fam), fr = rawFam.get(fam);
-            boolean famCapped = fr > fp + 0.001;
-            h.append("<section class=\"family\"><h2><span class=\"femoji\">").append(fam.emoji).append("</span><span class=\"ftitle\">").append(fam.title).append("</span><span class=\"fpen").append(fp == 0 ? " ok" : "").append("\" title=\"Strafpunkte dieser Familie, Deckel ").append(fmt(fam.cap)).append("\">")
-             .append(fp == 0 ? "sauber" : "−" + fmt(fp) + " <small>Deckel " + fmt(fam.cap) + "</small>").append("</span></h2>");
-            if (famCapped) h.append("<p class=\"cap\">Deckel erreicht: die Monster bringen zusammen −").append(fmt(fr)).append(", es zählen −").append(fmt(fp)).append(".</p>");
+            List<Smell> smells = Arrays.stream(Smell.values()).filter(s -> s.family == fam).sorted(Comparator.comparingDouble((Smell s) -> -cost.get(s))).collect(Collectors.toList());
+            Integer pts = fpts.get(fam);
+            String col = pts == null ? "var(--soft)" : pts >= 75 ? "#38c172" : pts >= 40 ? "#f6b73c" : "#e5484d";
+            h.append("<section class=\"family\"><h2><span class=\"femoji\">").append(fam.emoji).append("</span><span class=\"ftitle\">").append(fam.title)
+             .append("</span><span class=\"bar\" title=\"Punkte dieser Familie: 100 minus die Kosten ihrer Funde\"><span style=\"width:").append(pts == null ? 0 : pts).append("%;background:").append(col).append("\"></span></span>")
+             .append("<span class=\"fpts\" style=\"color:").append(col).append("\">").append(pts == null ? "keine Tests" : pts + (fcost.get(fam) > 0 ? " <small>kostet " + fmt(fcost.get(fam)) + "</small>" : "")).append("</span></h2>");
             StringBuilder beatenChips = new StringBuilder();
             for (Smell s : smells) {
                 List<Finding> fs = findings.stream().filter(f -> f.smell == s).sorted(Comparator.comparingDouble((Finding f) -> -f.penalty).thenComparing(Finding::file).thenComparingInt(Finding::line)).collect(Collectors.toList());
                 if (fs.isEmpty()) { beatenChips.append("<span title=\"").append(esc(s.monster + " (" + s.smell + "): " + s.rule)).append("\">").append(s.emoji).append("</span>"); continue; }
-                boolean capped = rawSmell.get(s) > pen.get(s) + 0.001;
                 h.append("<details class=\"monster\" open><summary><span class=\"emoji\">").append(s.emoji).append("</span><span class=\"names\"><b>").append(s.monster).append("</b><small>").append(esc(s.smell)).append("</small></span>")
-                 .append("<span class=\"count\">").append(fs.size()).append("×</span><span class=\"pen\" title=\"Strafpunkte dieses Monsters, Deckel ").append(fmt(s.cap)).append("\">−").append(fmt(pen.get(s))).append("</span></summary>");
-                h.append("<p class=\"fix\">").append(esc(s.fix)).append("</p>");
-                if (capped) h.append("<p class=\"cap\">Deckel erreicht: die Funde bringen zusammen −").append(fmt(rawSmell.get(s))).append(", es zählen −").append(fmt(pen.get(s))).append(".</p>");
-                h.append("<ul>");
-                for (Finding f : fs) h.append("<li><a href=\"#f").append(fileIndex.get(f.file)).append("-L").append(f.line).append("\"><code>").append(esc(f.file.replaceAll(".*/", ""))).append(":").append(f.line).append("</code> ").append(esc(f.text)).append("</a><span class=\"pts\" title=\"Strafpunkte dieses Funds\">−").append(fmt(f.penalty)).append("</span></li>");
+                 .append("<span class=\"count\">").append(fs.size()).append("×</span><span class=\"pen\" title=\"Was die Funde dieses Monsters zusammen kosten\">kostet ").append(fmt(cost.get(s))).append("</span></summary>");
+                h.append("<p class=\"fix\">").append(esc(s.fix)).append("</p><ul>");
+                for (Finding f : fs) h.append("<li><a href=\"#f").append(fileIndex.get(f.file)).append("-L").append(f.line).append("\"><code>").append(esc(f.file.replaceAll(".*/", ""))).append(":").append(f.line).append("</code> ").append(esc(f.text)).append("</a><span class=\"pts\" title=\"Was dieser Fund kostet\">").append(fmt(f.penalty)).append("</span></li>");
                 h.append("</ul></details>");
             }
             if (beatenChips.length() > 0) h.append("<p class=\"beaten\">Besiegt ").append(beatenChips).append("</p>");
@@ -1304,29 +1308,28 @@ public class CleanCodeReport {
         return h.toString();
     }
 
-    String radar(Map<Family, Double> fpen) {
+    String radar(Map<Family, Integer> fpts) {
         Family[] fams = Family.values();
         int n = fams.length; double cx = 130, cy = 94, r = 62;
-        StringBuilder s = new StringBuilder("<div class=\"radar\"><svg viewBox=\"0 0 260 192\" width=\"100%\" role=\"img\" aria-label=\"Gesundheit je Familie\">");
+        StringBuilder s = new StringBuilder("<div class=\"radar\"><svg viewBox=\"0 0 260 192\" width=\"100%\" role=\"img\" aria-label=\"Punkte je Familie\">");
         for (int ring = 1; ring <= 4; ring++) s.append("<polygon points=\"").append(poly(n, cx, cy, r * ring / 4.0, null)).append("\" fill=\"none\" stroke=\"rgba(255,255,255,.14)\"/>");
         for (int i = 0; i < n; i++) { double a = angle(i, n); s.append("<line x1=\"").append(svg(cx)).append("\" y1=\"").append(svg(cy)).append("\" x2=\"").append(svg(cx + r * Math.cos(a))).append("\" y2=\"").append(svg(cy + r * Math.sin(a))).append("\" stroke=\"rgba(255,255,255,.14)\"/>"); }
-        double[] health = new double[n];
-        for (int i = 0; i < n; i++) health[i] = Math.max(0, 1 - fpen.get(fams[i]) / fams[i].cap);
-        s.append("<polygon points=\"").append(poly(n, cx, cy, r, health)).append("\" fill=\"rgba(61,141,255,.35)\" stroke=\"#9fd8ff\" stroke-width=\"2\" stroke-linejoin=\"round\"/>");
+        double[] share = new double[n];
+        for (int i = 0; i < n; i++) share[i] = fpts.containsKey(fams[i]) ? fpts.get(fams[i]) / 100.0 : 1;
+        s.append("<polygon points=\"").append(poly(n, cx, cy, r, share)).append("\" fill=\"rgba(61,141,255,.35)\" stroke=\"#9fd8ff\" stroke-width=\"2\" stroke-linejoin=\"round\"/>");
         for (int i = 0; i < n; i++) {
-            double a = angle(i, n), px = cx + r * health[i] * Math.cos(a), py = cy + r * health[i] * Math.sin(a);
-            String col = health[i] >= .7 ? "#38c172" : health[i] >= .4 ? "#f6b73c" : "#e5484d";
+            double a = angle(i, n), px = cx + r * share[i] * Math.cos(a), py = cy + r * share[i] * Math.sin(a);
+            Integer pts = fpts.get(fams[i]);
+            String col = pts == null ? "#a9bddb" : pts >= 75 ? "#38c172" : pts >= 40 ? "#f6b73c" : "#e5484d";
             s.append("<circle cx=\"").append(svg(px)).append("\" cy=\"").append(svg(py)).append("\" r=\"3.5\" fill=\"").append(col).append("\"/>");
             double lx = cx + (r + 12) * Math.cos(a), ly = cy + (r + 12) * Math.sin(a);
             String anchor = Math.abs(Math.cos(a)) < .2 ? "middle" : Math.cos(a) > 0 ? "start" : "end";
             double dy = Math.sin(a) < -.2 ? -6 : Math.sin(a) > .2 ? 6 : 0;
             String label = fams[i].title.replace("Object-Orientation Abusers", "OO Abusers").replace("Test Smells", "Tests");
-            // Dieselbe Zahl wie in der Liste: Strafpunkte der Familie und ihr Deckel
-            String value = fpen.get(fams[i]) == 0 ? "sauber" : "−" + fmt(fpen.get(fams[i])) + " von " + fmt(fams[i].cap);
             s.append("<text x=\"").append(svg(lx)).append("\" y=\"").append(svg(ly + dy)).append("\" text-anchor=\"").append(anchor).append("\" class=\"axis\">").append(esc(label))
-             .append("<tspan x=\"").append(svg(lx)).append("\" dy=\"10\" fill=\"").append(col).append("\" font-weight=\"600\">").append(value).append("</tspan></text>");
+             .append("<tspan x=\"").append(svg(lx)).append("\" dy=\"10\" fill=\"").append(col).append("\" font-weight=\"600\">").append(pts == null ? "keine Tests" : String.valueOf(pts)).append("</tspan></text>");
         }
-        return s.append("</svg><p class=\"radarnote\">Strafpunkte je Familie und ihr Deckel. Außen ist sauber, in der Mitte ist der Deckel voll.</p></div>").toString();
+        return s.append("</svg><p class=\"radarnote\">Punkte je Familie, 0 bis 100. Außen ist sauber.</p></div>").toString();
     }
 
     static double angle(int i, int n) { return -Math.PI / 2 + 2 * Math.PI * i / n; }
@@ -1341,12 +1344,12 @@ public class CleanCodeReport {
         h.append("<section class=\"file rules\" id=\"f").append(index).append("\"").append(only ? "" : " hidden").append("><div class=\"crumbs\">Clean-Code-Report ").append(VERSION).append(" · Regelwerk</div><h2 class=\"classname\">Regelwerk</h2><div class=\"prose\">");
         h.append("<p>Die Familien folgen der Einteilung von Mäntylä und Lassenius, die refactoring.guru bekannt gemacht hat: <b>Bloaters</b>, <b>Object-Orientation Abusers</b>, <b>Change Preventers</b>, <b>Dispensables</b> und <b>Couplers</b>. Dazu kommen <b>Readability</b> nach <i>Clean Code</i> (Robert C. Martin) und <b>Test Smells</b> nach <i>xUnit Test Patterns</i> (Gerard Meszaros). Die Refactorings heißen wie bei Martin Fowler.</p>");
         h.append("<p>Change Preventers (Divergent Change, Shotgun Surgery, Parallel Inheritance Hierarchies) zeigen sich erst in der Änderungshistorie. Der Bericht misst sie nicht.</p>");
-        h.append("<p>So wird gerechnet: Jeder Fund bringt Strafpunkte, die Zahl steht hinter dem Fund. Je Monster werden die Funde addiert und am Deckel des Monsters abgeschnitten. Je Familie werden die Monster addiert und am Deckel der Familie abgeschnitten, damit keine Familie allein den Rest erdrückt. Wo ein Deckel greift, stehen Rohwert und gezählter Wert nebeneinander. Punktestand: 100 minus die Summe der Familien; die Rechnung steht links unter dem Tacho. Der Radar zeigt dieselben Zahlen je Familie, außen ist sauber. Ränge: ab 90 Clean-Code-Meister, ab 70 Geselle, ab 50 Lehrling, ab 25 Spaghetti-Koch, darunter Legacy-Legende.</p>");
+        h.append("<p><b>So wird gerechnet:</b> Jede Familie startet mit 100 Punkten. Jeder Fund kostet seine Familie Punkte, die Zahl steht hinter dem Fund; unter 0 geht es nicht. Der Punktestand ist der Durchschnitt der Familien, die Rechnung steht links unter dem Tacho. Gibt es keine Tests, wird Test Smells nicht bewertet. Ränge: ab 90 Clean-Code-Meister, ab 75 Geselle, ab 60 Lehrling, ab 40 Spaghetti-Koch, darunter Legacy-Legende.</p>");
         for (Family fam : Family.values()) {
-            h.append("<h3>").append(fam.emoji).append(" ").append(esc(fam.title)).append(" <small>Deckel ").append(fmt(fam.cap)).append("</small></h3><p class=\"about\">").append(esc(fam.about)).append("</p>");
-            h.append("<table><thead><tr><th>Monster</th><th>Smell</th><th>Regel</th><th>Strafpunkte</th><th>Refactoring</th></tr></thead><tbody>");
+            h.append("<h3>").append(fam.emoji).append(" ").append(esc(fam.title)).append("</h3><p class=\"about\">").append(esc(fam.about)).append("</p>");
+            h.append("<table><thead><tr><th>Monster</th><th>Smell</th><th>Regel</th><th>Kostet</th><th>Refactoring</th></tr></thead><tbody>");
             for (Smell s : Smell.values()) if (s.family == fam)
-                h.append("<tr><td class=\"mon\">").append(s.emoji).append(" ").append(esc(s.monster)).append("</td><td>").append(esc(s.smell)).append("</td><td>").append(esc(s.rule)).append("</td><td>").append(esc(s.points)).append("</td><td>").append(esc(s.fix)).append("</td></tr>");
+                h.append("<tr><td class=\"mon\">").append(s.emoji).append(" ").append(esc(s.monster)).append("</td><td>").append(esc(s.smell)).append("</td><td>").append(esc(s.rule)).append("</td><td>").append(esc(s.cost)).append("</td><td>").append(esc(s.fix)).append("</td></tr>");
             h.append("</tbody></table>");
         }
         h.append("<p class=\"about\">Gemessen wird mit dem Java-Parser des JDK, nicht mit Textmustern. Was der Bericht nicht sieht: Typen aus anderen Dateien, Vererbung über Dateigrenzen, Laufzeitverhalten. Ein Fund ist ein Hinweis, kein Urteil.</p>");
@@ -1376,14 +1379,14 @@ public class CleanCodeReport {
         .hero{display:flex;align-items:center;gap:12px}.score{font-size:40px;font-weight:700;fill:#fff}.of{font-size:11px;fill:var(--soft)}
         .rank{margin:0;font-size:1.15rem;font-weight:600}.big{font-size:1.5rem;vertical-align:middle}.tag{margin:2px 0 4px;color:var(--soft);font-size:.9rem}.stat{margin:0;color:var(--ice);font-size:.85rem}
         .history{margin:8px 0 0;color:var(--soft);font-size:.8rem}.pill{display:inline-block;margin:2px 3px 0 0;padding:0 8px;border-radius:999px;background:rgba(255,255,255,.1)}.pill.now{background:var(--beam);color:#fff}
-        .calc{margin:10px 0 0;padding:6px 10px;border-radius:8px;background:rgba(3,12,30,.45);color:var(--soft);font-size:.85rem;letter-spacing:.02em}.calc b{color:#fff;font-size:1rem}
+        .calc{margin:10px 0 0;padding:6px 10px;border-radius:8px;background:rgba(3,12,30,.45);color:var(--soft);font-size:.85rem;letter-spacing:.02em}.calc b{color:#fff;font-size:1rem}.calc small{display:block;font-size:.72rem}
         .radar{margin:10px auto 0;max-width:300px}.axis{font-size:9.5px;fill:var(--soft);font-family:"Avenir Next","Segoe UI",Arial,sans-serif}.radarnote{margin:0;color:var(--soft);font-size:.72rem;text-align:center}
-        .cap{margin:0 10px 6px;color:#ffd27a;font-size:.78rem}.family>.cap{margin:-2px 6px 6px}
         .boss{display:block;margin-top:12px;padding:10px 12px;border:1px solid var(--edge);border-radius:12px;background:rgba(255,255,255,.06);color:inherit;text-decoration:none}.boss:hover{border-color:var(--ice)}
         .boss .name{margin:0;font-size:1.05rem;font-weight:600}.where{margin-left:8px;font-size:.8rem;color:var(--soft);font-weight:400}.hp{height:10px;border-radius:999px;background:rgba(0,0,0,.4);overflow:hidden;margin:6px 0 8px}.hp div{height:100%;background:linear-gradient(90deg,#e5484d,#ff8a80)}
         .stats{display:flex;flex-wrap:wrap;gap:6px;margin:0}.stats span{padding:1px 8px;border-radius:999px;background:rgba(3,12,30,.5);border:1px solid rgba(159,216,255,.25);color:var(--ice);font-size:.78rem}
         .list{padding:10px 12px 24px}.list h2{margin:12px 6px 6px;font-size:.85rem;color:var(--ice);letter-spacing:.03em;font-weight:600}.empty{margin:8px 6px;color:var(--soft)}
-        .family h2{display:flex;align-items:center;gap:8px;margin:16px 6px 6px}.femoji{font-size:1.1rem}.ftitle{flex:1;color:#fff;font-size:.9rem}.fpen{color:#ff8a80;font-weight:600;font-size:.85rem}.fpen small{color:var(--soft);font-weight:400;font-size:.75rem;margin-left:4px}.fpen.ok{color:#38c172}
+        .family h2{display:flex;align-items:center;gap:8px;margin:16px 6px 6px}.femoji{font-size:1.1rem}.ftitle{flex:1;color:#fff;font-size:.9rem}
+        .bar{display:inline-block;width:70px;height:8px;border-radius:999px;background:rgba(0,0,0,.4);overflow:hidden}.bar span{display:block;height:100%;border-radius:999px}.fpts{font-weight:700;font-size:.95rem;min-width:2em;text-align:right}.fpts small{color:var(--soft);font-weight:400;font-size:.72rem;margin-left:4px}
         .beaten{margin:2px 6px 0;color:var(--soft);font-size:.78rem}.beaten span{font-size:1rem;margin-left:3px;cursor:help;opacity:.7}
         .monster{margin:4px 0;border:1px solid var(--edge);border-radius:12px;background:rgba(255,255,255,.05)}.monster summary{display:flex;align-items:center;gap:10px;padding:8px 10px;cursor:pointer;list-style:none}.monster summary::-webkit-details-marker{display:none}
         .emoji{font-size:1.4rem}.names{flex:1;min-width:0}.names b{display:block;font-size:.95rem}.names small{color:var(--soft)}.count{padding:1px 8px;border-radius:999px;background:#e5484d;color:#fff;font-size:.78rem;font-weight:600}.pen{color:#ff8a80;font-size:.8rem;min-width:2.6em;text-align:right}
@@ -1435,18 +1438,17 @@ public class CleanCodeReport {
         System.out.println("Clean-Code-Report " + VERSION + ": " + score + " von 100, " + lv[0] + " " + lv[1]);
         Method boss = report.boss();
         if (boss != null) System.out.println("  Endgegner: " + boss.label() + " in " + boss.file.replaceAll(".*/", "") + ":" + boss.start + ", " + boss.codeLines + " Zeilen, Tiefe " + boss.depth + ", Komplexität " + boss.complexity + ", " + (boss.body == null ? 0 : boss.body.locals.size()) + " Variablen");
-        else System.out.println("  Endgegner: keiner (keine Methode mit 5 oder mehr Strafpunkten)");
-        Map<Family, Double> fpen = report.penaltyByFamily();
-        System.out.println("  Familien: " + Arrays.stream(Family.values()).map(f -> f.emoji + " " + f.title + " −" + fmt(fpen.get(f)) + "/" + fmt(f.cap)).collect(Collectors.joining(" · ")));
-        Map<Smell, Double> pen = report.penaltyBySmell(), raw = report.rawBySmell();
+        else System.out.println("  Endgegner: keiner (keine Methode, deren Funde zusammen 25 oder mehr kosten)");
+        Map<Family, Integer> fpts = report.pointsByFamily();
+        System.out.println("  Punkte je Familie (Durchschnitt = Punktestand): " + Arrays.stream(Family.values()).map(f -> f.emoji + " " + f.title + " " + (fpts.containsKey(f) ? fpts.get(f) : "nicht bewertet, keine Tests")).collect(Collectors.joining(" · ")));
+        Map<Smell, Double> cost = report.costBySmell();
         report.findings.stream().collect(Collectors.groupingBy(Finding::smell, () -> new EnumMap<>(Smell.class), Collectors.counting()))
-            .entrySet().stream().sorted(Comparator.comparingDouble(e -> -pen.get(e.getKey())))
-            .forEach(e -> System.out.println("  " + e.getKey().emoji + " " + e.getKey().monster + " (" + e.getKey().smell + "): " + e.getValue() + "× (−" + fmt(pen.get(e.getKey()))
-                + (raw.get(e.getKey()) > pen.get(e.getKey()) + 0.001 ? ", Deckel; roh −" + fmt(raw.get(e.getKey())) : "") + ")"));
+            .entrySet().stream().sorted(Comparator.comparingDouble(e -> -cost.get(e.getKey())))
+            .forEach(e -> System.out.println("  " + e.getKey().emoji + " " + e.getKey().monster + " (" + e.getKey().smell + "): " + e.getValue() + "×, kostet " + fmt(cost.get(e.getKey()))));
         if (all) {
             System.out.println("Alle Funde:");
             report.findings.stream().sorted(Comparator.comparing(Finding::file).thenComparingInt(Finding::line))
-                .forEach(f -> System.out.println("  " + f.file.replaceAll(".*/", "") + ":" + f.line + " " + f.smell.emoji + " " + f.text + " (" + fmt(f.penalty) + ")"));
+                .forEach(f -> System.out.println("  " + f.file.replaceAll(".*/", "") + ":" + f.line + " " + f.smell.emoji + " " + f.text + " (kostet " + fmt(f.penalty) + ")"));
         }
         System.out.println("Bericht: " + root.relativize(out));
     }
