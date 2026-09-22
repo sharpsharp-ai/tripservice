@@ -1096,16 +1096,32 @@ public class CleanCodeReport {
 
     // ---- Wertung ------------------------------------------------------------------
 
-    Map<Smell, Double> penaltyBySmell() {
+    /** Strafpunkte je Monster, ungedeckelt: die Summe der Funde. */
+    Map<Smell, Double> rawBySmell() {
         Map<Smell, Double> p = new EnumMap<>(Smell.class);
-        for (Smell s : Smell.values()) p.put(s, Math.min(s.cap, findings.stream().filter(f -> f.smell == s).mapToDouble(Finding::penalty).sum()));
+        for (Smell s : Smell.values()) p.put(s, findings.stream().filter(f -> f.smell == s).mapToDouble(Finding::penalty).sum());
         return p;
     }
 
-    Map<Family, Double> penaltyByFamily() {
+    /** Strafpunkte je Monster, am Deckel des Monsters abgeschnitten. */
+    Map<Smell, Double> penaltyBySmell() {
+        Map<Smell, Double> p = rawBySmell();
+        for (Smell s : Smell.values()) p.put(s, Math.min(s.cap, p.get(s)));
+        return p;
+    }
+
+    /** Strafpunkte je Familie vor dem Familien-Deckel: die Summe der gedeckelten Monster. */
+    Map<Family, Double> rawByFamily() {
         Map<Smell, Double> p = penaltyBySmell();
         Map<Family, Double> f = new EnumMap<>(Family.class);
-        for (Family fam : Family.values()) f.put(fam, Math.min(fam.cap, Arrays.stream(Smell.values()).filter(s -> s.family == fam).mapToDouble(p::get).sum()));
+        for (Family fam : Family.values()) f.put(fam, Arrays.stream(Smell.values()).filter(s -> s.family == fam).mapToDouble(p::get).sum());
+        return f;
+    }
+
+    /** Strafpunkte je Familie, am Deckel der Familie abgeschnitten. Diese Zahlen ziehen von 100 ab. */
+    Map<Family, Double> penaltyByFamily() {
+        Map<Family, Double> f = rawByFamily();
+        for (Family fam : Family.values()) f.put(fam, Math.min(fam.cap, f.get(fam)));
         return f;
     }
 
@@ -1179,8 +1195,8 @@ public class CleanCodeReport {
     String html(List<int[]> history) {
         int score = score();
         String[] lv = level(score);
-        Map<Smell, Double> pen = penaltyBySmell();
-        Map<Family, Double> fpen = penaltyByFamily();
+        Map<Smell, Double> pen = penaltyBySmell(), rawSmell = rawBySmell();
+        Map<Family, Double> fpen = penaltyByFamily(), rawFam = rawByFamily();
         long beaten = Arrays.stream(Smell.values()).filter(s -> pen.get(s) == 0).count();
         String project = root.toAbsolutePath().getFileName().toString();
         String when = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
@@ -1211,6 +1227,10 @@ public class CleanCodeReport {
             for (int[] hs : history) h.append("<span class=\"pill\">").append(hs[0]).append("</span>");
             h.append("<span class=\"pill now\">").append(score).append("</span></p>");
         }
+        // Die Rechnung: 100 minus die gedeckelten Strafpunkte je Familie
+        h.append("<p class=\"calc\" title=\"Punktestand: 100 minus die Strafpunkte je Familie, jede am Deckel ihrer Familie abgeschnitten\">100");
+        for (Family fam : Family.values()) h.append(" − <span title=\"").append(esc(fam.title)).append("\">").append(fam.emoji).append("</span>").append(fmt(fpen.get(fam)));
+        h.append(" = <b>").append(score).append("</b></p>");
         h.append(radar(fpen));
 
         Method boss = boss();
@@ -1220,7 +1240,7 @@ public class CleanCodeReport {
             h.append("<a class=\"boss\" href=\"#f").append(fileIndex.get(boss.file)).append("-L").append(boss.start).append("\"><p class=\"kicker\">Endgegner</p><p class=\"name\">").append(esc(boss.label())).append("<span class=\"where\">")
              .append(esc(boss.file.replaceAll(".*/", ""))).append(":").append(boss.start).append("</span></p><div class=\"hp\"><div style=\"width:").append(hp).append("%\"></div></div>")
              .append("<p class=\"stats\"><span>").append(boss.codeLines).append(" Zeilen</span><span>Tiefe ").append(boss.depth).append("</span><span>Komplexität ").append(boss.complexity).append("</span><span>")
-             .append(boss.body == null ? 0 : boss.body.locals.size()).append(" Variablen</span><span>").append(fmt(bp)).append(" Strafpunkte</span></p></a>");
+             .append(boss.body == null ? 0 : boss.body.locals.size()).append(" Variablen</span><span title=\"Summe der Funde in dieser Methode, ohne Deckel\">−").append(fmt(bp)).append(" roh</span></p></a>");
         }
         h.append("</div>");
 
@@ -1228,16 +1248,22 @@ public class CleanCodeReport {
         if (findings.isEmpty()) h.append("<p class=\"empty\">").append(sources.isEmpty() ? "Unter src/ liegt noch kein Java-Code." : "Kein Monster in Sicht. Alle Regeln erfüllt.").append("</p>");
         for (Family fam : Family.values()) {
             List<Smell> smells = Arrays.stream(Smell.values()).filter(s -> s.family == fam).sorted(Comparator.comparingDouble((Smell s) -> -pen.get(s))).collect(Collectors.toList());
-            h.append("<section class=\"family\"><h2><span class=\"femoji\">").append(fam.emoji).append("</span><span class=\"ftitle\">").append(fam.title).append("</span><span class=\"fpen").append(fpen.get(fam) == 0 ? " ok" : "").append("\">")
-             .append(fpen.get(fam) == 0 ? "sauber" : "−" + fmt(fpen.get(fam)) + " von " + fmt(fam.cap)).append("</span></h2>");
+            double fp = fpen.get(fam), fr = rawFam.get(fam);
+            boolean famCapped = fr > fp + 0.001;
+            h.append("<section class=\"family\"><h2><span class=\"femoji\">").append(fam.emoji).append("</span><span class=\"ftitle\">").append(fam.title).append("</span><span class=\"fpen").append(fp == 0 ? " ok" : "").append("\" title=\"Strafpunkte dieser Familie, Deckel ").append(fmt(fam.cap)).append("\">")
+             .append(fp == 0 ? "sauber" : "−" + fmt(fp) + " <small>Deckel " + fmt(fam.cap) + "</small>").append("</span></h2>");
+            if (famCapped) h.append("<p class=\"cap\">Deckel erreicht: die Monster bringen zusammen −").append(fmt(fr)).append(", es zählen −").append(fmt(fp)).append(".</p>");
             StringBuilder beatenChips = new StringBuilder();
             for (Smell s : smells) {
                 List<Finding> fs = findings.stream().filter(f -> f.smell == s).sorted(Comparator.comparingDouble((Finding f) -> -f.penalty).thenComparing(Finding::file).thenComparingInt(Finding::line)).collect(Collectors.toList());
                 if (fs.isEmpty()) { beatenChips.append("<span title=\"").append(esc(s.monster + " (" + s.smell + "): " + s.rule)).append("\">").append(s.emoji).append("</span>"); continue; }
+                boolean capped = rawSmell.get(s) > pen.get(s) + 0.001;
                 h.append("<details class=\"monster\" open><summary><span class=\"emoji\">").append(s.emoji).append("</span><span class=\"names\"><b>").append(s.monster).append("</b><small>").append(esc(s.smell)).append("</small></span>")
-                 .append("<span class=\"count\">").append(fs.size()).append("×</span><span class=\"pen\">−").append(fmt(pen.get(s))).append("</span></summary>");
-                h.append("<p class=\"fix\">").append(esc(s.fix)).append("</p><ul>");
-                for (Finding f : fs) h.append("<li><a href=\"#f").append(fileIndex.get(f.file)).append("-L").append(f.line).append("\"><code>").append(esc(f.file.replaceAll(".*/", ""))).append(":").append(f.line).append("</code> ").append(esc(f.text)).append("</a><span class=\"pts\">").append(fmt(f.penalty)).append("</span></li>");
+                 .append("<span class=\"count\">").append(fs.size()).append("×</span><span class=\"pen\" title=\"Strafpunkte dieses Monsters, Deckel ").append(fmt(s.cap)).append("\">−").append(fmt(pen.get(s))).append("</span></summary>");
+                h.append("<p class=\"fix\">").append(esc(s.fix)).append("</p>");
+                if (capped) h.append("<p class=\"cap\">Deckel erreicht: die Funde bringen zusammen −").append(fmt(rawSmell.get(s))).append(", es zählen −").append(fmt(pen.get(s))).append(".</p>");
+                h.append("<ul>");
+                for (Finding f : fs) h.append("<li><a href=\"#f").append(fileIndex.get(f.file)).append("-L").append(f.line).append("\"><code>").append(esc(f.file.replaceAll(".*/", ""))).append(":").append(f.line).append("</code> ").append(esc(f.text)).append("</a><span class=\"pts\" title=\"Strafpunkte dieses Funds\">−").append(fmt(f.penalty)).append("</span></li>");
                 h.append("</ul></details>");
             }
             if (beatenChips.length() > 0) h.append("<p class=\"beaten\">Besiegt ").append(beatenChips).append("</p>");
@@ -1295,10 +1321,12 @@ public class CleanCodeReport {
             String anchor = Math.abs(Math.cos(a)) < .2 ? "middle" : Math.cos(a) > 0 ? "start" : "end";
             double dy = Math.sin(a) < -.2 ? -6 : Math.sin(a) > .2 ? 6 : 0;
             String label = fams[i].title.replace("Object-Orientation Abusers", "OO Abusers").replace("Test Smells", "Tests");
+            // Dieselbe Zahl wie in der Liste: Strafpunkte der Familie und ihr Deckel
+            String value = fpen.get(fams[i]) == 0 ? "sauber" : "−" + fmt(fpen.get(fams[i])) + " von " + fmt(fams[i].cap);
             s.append("<text x=\"").append(svg(lx)).append("\" y=\"").append(svg(ly + dy)).append("\" text-anchor=\"").append(anchor).append("\" class=\"axis\">").append(esc(label))
-             .append("<tspan x=\"").append(svg(lx)).append("\" dy=\"10\" fill=\"").append(col).append("\" font-weight=\"600\">").append(Math.round(health[i] * 100)).append("</tspan></text>");
+             .append("<tspan x=\"").append(svg(lx)).append("\" dy=\"10\" fill=\"").append(col).append("\" font-weight=\"600\">").append(value).append("</tspan></text>");
         }
-        return s.append("</svg></div>").toString();
+        return s.append("</svg><p class=\"radarnote\">Strafpunkte je Familie und ihr Deckel. Außen ist sauber, in der Mitte ist der Deckel voll.</p></div>").toString();
     }
 
     static double angle(int i, int n) { return -Math.PI / 2 + 2 * Math.PI * i / n; }
@@ -1313,7 +1341,7 @@ public class CleanCodeReport {
         h.append("<section class=\"file rules\" id=\"f").append(index).append("\"").append(only ? "" : " hidden").append("><div class=\"crumbs\">Clean-Code-Report ").append(VERSION).append(" · Regelwerk</div><h2 class=\"classname\">Regelwerk</h2><div class=\"prose\">");
         h.append("<p>Die Familien folgen der Einteilung von Mäntylä und Lassenius, die refactoring.guru bekannt gemacht hat: <b>Bloaters</b>, <b>Object-Orientation Abusers</b>, <b>Change Preventers</b>, <b>Dispensables</b> und <b>Couplers</b>. Dazu kommen <b>Readability</b> nach <i>Clean Code</i> (Robert C. Martin) und <b>Test Smells</b> nach <i>xUnit Test Patterns</i> (Gerard Meszaros). Die Refactorings heißen wie bei Martin Fowler.</p>");
         h.append("<p>Change Preventers (Divergent Change, Shotgun Surgery, Parallel Inheritance Hierarchies) zeigen sich erst in der Änderungshistorie. Der Bericht misst sie nicht.</p>");
-        h.append("<p>Punkte: 100 minus Strafpunkte. Jedes Monster ist gedeckelt, jede Familie noch einmal, damit keine Familie allein den Rest erdrückt. Der Radar links zeigt je Familie, wie viel vom Deckel noch frei ist. Ränge: ab 90 Clean-Code-Meister, ab 70 Geselle, ab 50 Lehrling, ab 25 Spaghetti-Koch, darunter Legacy-Legende.</p>");
+        h.append("<p>So wird gerechnet: Jeder Fund bringt Strafpunkte, die Zahl steht hinter dem Fund. Je Monster werden die Funde addiert und am Deckel des Monsters abgeschnitten. Je Familie werden die Monster addiert und am Deckel der Familie abgeschnitten, damit keine Familie allein den Rest erdrückt. Wo ein Deckel greift, stehen Rohwert und gezählter Wert nebeneinander. Punktestand: 100 minus die Summe der Familien; die Rechnung steht links unter dem Tacho. Der Radar zeigt dieselben Zahlen je Familie, außen ist sauber. Ränge: ab 90 Clean-Code-Meister, ab 70 Geselle, ab 50 Lehrling, ab 25 Spaghetti-Koch, darunter Legacy-Legende.</p>");
         for (Family fam : Family.values()) {
             h.append("<h3>").append(fam.emoji).append(" ").append(esc(fam.title)).append(" <small>Deckel ").append(fmt(fam.cap)).append("</small></h3><p class=\"about\">").append(esc(fam.about)).append("</p>");
             h.append("<table><thead><tr><th>Monster</th><th>Smell</th><th>Regel</th><th>Strafpunkte</th><th>Refactoring</th></tr></thead><tbody>");
@@ -1348,12 +1376,14 @@ public class CleanCodeReport {
         .hero{display:flex;align-items:center;gap:12px}.score{font-size:40px;font-weight:700;fill:#fff}.of{font-size:11px;fill:var(--soft)}
         .rank{margin:0;font-size:1.15rem;font-weight:600}.big{font-size:1.5rem;vertical-align:middle}.tag{margin:2px 0 4px;color:var(--soft);font-size:.9rem}.stat{margin:0;color:var(--ice);font-size:.85rem}
         .history{margin:8px 0 0;color:var(--soft);font-size:.8rem}.pill{display:inline-block;margin:2px 3px 0 0;padding:0 8px;border-radius:999px;background:rgba(255,255,255,.1)}.pill.now{background:var(--beam);color:#fff}
-        .radar{margin:10px auto 0;max-width:300px}.axis{font-size:9.5px;fill:var(--soft);font-family:"Avenir Next","Segoe UI",Arial,sans-serif}
+        .calc{margin:10px 0 0;padding:6px 10px;border-radius:8px;background:rgba(3,12,30,.45);color:var(--soft);font-size:.85rem;letter-spacing:.02em}.calc b{color:#fff;font-size:1rem}
+        .radar{margin:10px auto 0;max-width:300px}.axis{font-size:9.5px;fill:var(--soft);font-family:"Avenir Next","Segoe UI",Arial,sans-serif}.radarnote{margin:0;color:var(--soft);font-size:.72rem;text-align:center}
+        .cap{margin:0 10px 6px;color:#ffd27a;font-size:.78rem}.family>.cap{margin:-2px 6px 6px}
         .boss{display:block;margin-top:12px;padding:10px 12px;border:1px solid var(--edge);border-radius:12px;background:rgba(255,255,255,.06);color:inherit;text-decoration:none}.boss:hover{border-color:var(--ice)}
         .boss .name{margin:0;font-size:1.05rem;font-weight:600}.where{margin-left:8px;font-size:.8rem;color:var(--soft);font-weight:400}.hp{height:10px;border-radius:999px;background:rgba(0,0,0,.4);overflow:hidden;margin:6px 0 8px}.hp div{height:100%;background:linear-gradient(90deg,#e5484d,#ff8a80)}
         .stats{display:flex;flex-wrap:wrap;gap:6px;margin:0}.stats span{padding:1px 8px;border-radius:999px;background:rgba(3,12,30,.5);border:1px solid rgba(159,216,255,.25);color:var(--ice);font-size:.78rem}
         .list{padding:10px 12px 24px}.list h2{margin:12px 6px 6px;font-size:.85rem;color:var(--ice);letter-spacing:.03em;font-weight:600}.empty{margin:8px 6px;color:var(--soft)}
-        .family h2{display:flex;align-items:center;gap:8px;margin:16px 6px 6px}.femoji{font-size:1.1rem}.ftitle{flex:1;color:#fff;font-size:.9rem}.fpen{color:#ff8a80;font-weight:500;font-size:.8rem}.fpen.ok{color:#38c172}
+        .family h2{display:flex;align-items:center;gap:8px;margin:16px 6px 6px}.femoji{font-size:1.1rem}.ftitle{flex:1;color:#fff;font-size:.9rem}.fpen{color:#ff8a80;font-weight:600;font-size:.85rem}.fpen small{color:var(--soft);font-weight:400;font-size:.75rem;margin-left:4px}.fpen.ok{color:#38c172}
         .beaten{margin:2px 6px 0;color:var(--soft);font-size:.78rem}.beaten span{font-size:1rem;margin-left:3px;cursor:help;opacity:.7}
         .monster{margin:4px 0;border:1px solid var(--edge);border-radius:12px;background:rgba(255,255,255,.05)}.monster summary{display:flex;align-items:center;gap:10px;padding:8px 10px;cursor:pointer;list-style:none}.monster summary::-webkit-details-marker{display:none}
         .emoji{font-size:1.4rem}.names{flex:1;min-width:0}.names b{display:block;font-size:.95rem}.names small{color:var(--soft)}.count{padding:1px 8px;border-radius:999px;background:#e5484d;color:#fff;font-size:.78rem;font-weight:600}.pen{color:#ff8a80;font-size:.8rem;min-width:2.6em;text-align:right}
@@ -1408,10 +1438,11 @@ public class CleanCodeReport {
         else System.out.println("  Endgegner: keiner (keine Methode mit 5 oder mehr Strafpunkten)");
         Map<Family, Double> fpen = report.penaltyByFamily();
         System.out.println("  Familien: " + Arrays.stream(Family.values()).map(f -> f.emoji + " " + f.title + " −" + fmt(fpen.get(f)) + "/" + fmt(f.cap)).collect(Collectors.joining(" · ")));
-        Map<Smell, Double> pen = report.penaltyBySmell();
+        Map<Smell, Double> pen = report.penaltyBySmell(), raw = report.rawBySmell();
         report.findings.stream().collect(Collectors.groupingBy(Finding::smell, () -> new EnumMap<>(Smell.class), Collectors.counting()))
             .entrySet().stream().sorted(Comparator.comparingDouble(e -> -pen.get(e.getKey())))
-            .forEach(e -> System.out.println("  " + e.getKey().emoji + " " + e.getKey().monster + " (" + e.getKey().smell + "): " + e.getValue() + "× (−" + fmt(pen.get(e.getKey())) + ")"));
+            .forEach(e -> System.out.println("  " + e.getKey().emoji + " " + e.getKey().monster + " (" + e.getKey().smell + "): " + e.getValue() + "× (−" + fmt(pen.get(e.getKey()))
+                + (raw.get(e.getKey()) > pen.get(e.getKey()) + 0.001 ? ", Deckel; roh −" + fmt(raw.get(e.getKey())) : "") + ")"));
         if (all) {
             System.out.println("Alle Funde:");
             report.findings.stream().sorted(Comparator.comparing(Finding::file).thenComparingInt(Finding::line))

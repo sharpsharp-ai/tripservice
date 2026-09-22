@@ -48,7 +48,7 @@ Sechs Familien nach dem Smell-Katalog von Martin Fowler in der Einteilung von M�
 | 🧪 Test Smells (15) | 🧪 Der Test-Muffel | test1, Tests ohne Prüfung, mehr als acht Prüfungen |
 | | 🎭 Der Schauspieler | if oder Schleife im Test, Thread.sleep, @Ignore, System.out im Test |
 
-Punkte: 100 minus Strafpunkte, je Monster und je Familie gedeckelt; der Radar im Bericht zeigt je Familie, wie viel vom Deckel frei ist. Rang ab 90 Clean-Code-Meister, ab 70 Geselle, ab 50 Lehrling, ab 25 Spaghetti-Koch, darunter Legacy-Legende. Jeder Lauf hängt den Stand an `.clean-code-history` an; der Bericht zeigt den Verlauf.
+Punkte: Jeder Fund bringt Strafpunkte; je Monster addiert und am Deckel des Monsters abgeschnitten, je Familie addiert und am Deckel der Familie abgeschnitten; Punktestand ist 100 minus die Summe der Familien. Die Rechnung steht im Bericht unter dem Tacho, der Radar zeigt dieselben Zahlen je Familie, und wo ein Deckel greift, stehen Rohwert und gezählter Wert nebeneinander. Rang ab 90 Clean-Code-Meister, ab 70 Geselle, ab 50 Lehrling, ab 25 Spaghetti-Koch, darunter Legacy-Legende. Jeder Lauf hängt den Stand an `.clean-code-history` an; der Bericht zeigt den Verlauf.
 
 ## Weitergeben
 Der Ordner `.opencode/skills/clean-code-report/` ist in sich geschlossen. In ein anderes Projekt kopieren, dazu `.opencode/commands/clean-code-report.md` und in `opencode.json` die Bash-Freigabe `java .opencode/skills/clean-code-report/CleanCodeReport.java*`. Dateien, die der Bericht übergehen soll, stehen als Glob in `.clean-code-ignore`, eines je Zeile.
