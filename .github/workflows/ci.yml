@@ -1,0 +1,32 @@
+# Bauen und testen mit Maven und JDK 17. Testergebnisse erscheinen als Check am Commit.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Alle Tests
+        run: mvn --batch-mode --no-transfer-progress verify
+      - name: Testergebnisse als Check am Commit
+        if: always()
+        uses: mikepenz/action-junit-report@v6
+        with:
+          report_paths: target/surefire-reports/TEST-*.xml
+          check_name: Testergebnisse
