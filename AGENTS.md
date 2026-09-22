@@ -3,6 +3,7 @@
 ## Befehle
 - `mvn -q verify`: das einzige Fertig-Kriterium. Keine Ausgabe und Exit-Code 0 heißt grün. Schreibt den Abdeckungsbericht nach `target/site/jacoco/`.
 - `scripts/unabgedeckt.sh TripService`: Zeilen und Verzweigungen, die die Tests nicht erreichen. Nach jedem `mvn -q verify` neu.
+- `java tools/CleanCodeReport.java`: Clean-Code-Report nach `target/clean-code-report.html`, Punkte und Smells je Methode.
 - Verboten: Tests löschen oder mit `@Ignore` abschalten, `-DskipTests`, Änderungen an `pom.xml`, `.opencode/`, `AGENTS.md`, `opencode.json`, `TripService_Original.java`.
 
 ## Struktur

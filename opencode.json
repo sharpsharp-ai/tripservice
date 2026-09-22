@@ -12,6 +12,7 @@
       "mvn *": "allow",
       "mvn *skipTests*": "deny",
       "mvn *maven.test.skip*": "deny",
+      "java tools/CleanCodeReport.java*": "allow",
       "scripts/unabgedeckt.sh*": "allow",
       "./scripts/unabgedeckt.sh*": "allow",
       "bash scripts/unabgedeckt.sh*": "allow",
