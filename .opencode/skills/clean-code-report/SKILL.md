@@ -2,7 +2,7 @@
 name: clean-code-report
 description: Erzeugt den Clean-Code-Report des Projekts (HTML mit Punktestand, Radar je Smell-Familie, Monstern und Code-Ansicht) und liest die Zusammenfassung; nutzen, wenn jemand wissen will, wie sauber der Code ist oder womit das Aufräumen anfangen soll
 ---
-# Clean-Code-Report 2.0
+# Clean-Code-Report 2.1
 
 Werkzeug: `java .opencode/skills/clean-code-report/CleanCodeReport.java`, im Projektordner ausführen. Braucht ein JDK 17 oder neuer (der Bericht liest den Code mit dem Java-Parser des JDK), keine Abhängigkeiten. Schreibt `target/clean-code-report.html` und druckt Punktestand, Rang, Endgegner, Punkte je Familie, die schwächste Familie und die Monster mit Anzahl und Kosten. Mit `--alle` druckt es zusätzlich jede Fundstelle. Kein Gate: Der Bericht zeigt, er entscheidet nicht.
 
@@ -56,4 +56,4 @@ Sechs Familien nach dem Smell-Katalog von Martin Fowler in der Einteilung von M�
 Punkte: Jede Familie startet mit 100 Punkten. Jeder Fund kostet seine Familie Punkte, die Zahl steht hinter dem Fund; unter 0 geht es nicht. Der Punktestand ist der Durchschnitt der Familien; gibt es keine Tests, wird Test Smells nicht bewertet. Die Rechnung steht im Bericht unter dem Tacho, die Kosten je Monster im Regelwerk. Rang ab 90 Clean-Code-Meister, ab 75 Geselle, ab 60 Lehrling, ab 40 Spaghetti-Koch, darunter Legacy-Legende. Jeder Lauf hängt den Stand an `.clean-code-history` an; der Bericht zeigt den Verlauf.
 
 ## Weitergeben
-Der Ordner `.opencode/skills/clean-code-report/` ist in sich geschlossen. In ein anderes Projekt kopieren, dazu `.opencode/commands/clean-code-report.md` und in `opencode.json` die Bash-Freigabe `java .opencode/skills/clean-code-report/CleanCodeReport.java*`. Dateien, die der Bericht übergehen soll, stehen als Glob in `.clean-code-ignore`, eines je Zeile.
+Der Ordner `.opencode/skills/clean-code-report/` ist in sich geschlossen. In ein anderes Projekt kopieren, dazu `.opencode/commands/clean-code-report.md` und in `opencode.json` die Bash-Freigabe `java .opencode/skills/clean-code-report/CleanCodeReport.java*`. Dateien, die der Bericht übergehen soll, stehen als Glob in `.clean-code-ignore`, eines je Zeile. Mit `?` davor gilt die Zeile nur für den Gesamtbericht: absichtlich schlechte Übungsbeispiele fehlen dort und erscheinen, sobald ein `--nur`-Ziel sie trifft.

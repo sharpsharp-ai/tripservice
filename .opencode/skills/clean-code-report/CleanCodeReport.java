@@ -81,7 +81,7 @@ import java.util.stream.Stream;
  */
 public class CleanCodeReport {
 
-    static final String VERSION = "2.0";
+    static final String VERSION = "2.1";
 
     // ---- Der Katalog ------------------------------------------------------------
 
@@ -203,6 +203,7 @@ public class CleanCodeReport {
         final Path path;
         final String file;
         final boolean test;
+        boolean onRequest;
         final List<String> lines;
         final String text;
         final String stripped;
@@ -382,11 +383,15 @@ public class CleanCodeReport {
     String targets() {
         StringBuilder out = new StringBuilder();
         for (boolean test : new boolean[]{false, true}) {
-            Map<String, List<String>> byPkg = new java.util.TreeMap<>();
-            for (Source s : sources) if (s.test == test) byPkg.computeIfAbsent(packageOf(s), k -> new ArrayList<>()).add(classOf(s));
+            Map<String, List<Source>> byPkg = new java.util.TreeMap<>();
+            for (Source s : sources) if (s.test == test) byPkg.computeIfAbsent(packageOf(s), k -> new ArrayList<>()).add(s);
             if (byPkg.isEmpty()) continue;
             out.append(test ? "Tests:\n" : "Produktivcode:\n");
-            for (Map.Entry<String, List<String>> e : byPkg.entrySet()) out.append("  ").append(e.getKey()).append(": ").append(String.join(", ", e.getValue())).append("\n");
+            for (Map.Entry<String, List<Source>> e : byPkg.entrySet()) {
+                boolean all = e.getValue().stream().allMatch(s -> s.onRequest);
+                out.append("  ").append(e.getKey()).append(all ? " (nur mit --nur)" : "").append(": ")
+                   .append(e.getValue().stream().map(s -> classOf(s) + (s.onRequest && !all ? " (nur mit --nur)" : "")).collect(Collectors.joining(", "))).append("\n");
+            }
         }
         return out.toString();
     }
@@ -415,7 +420,10 @@ public class CleanCodeReport {
         });
     }
 
-    /** Dateien, die der Bericht übergeht: Muster aus .clean-code-ignore, eins je Zeile, relativ zum Projektordner. */
+    /** Dateien, die der Bericht übergeht: Muster aus .clean-code-ignore, eins je Zeile, relativ zum Projektordner.
+     *  Mit ? davor gilt das Muster nur ohne Ausschnitt: solche Dateien fehlen im Gesamtbericht und kommen, sobald ein --nur-Ziel sie trifft. */
+    final List<java.nio.file.PathMatcher> onRequest = new ArrayList<>();
+    boolean listTargets;
     List<java.nio.file.PathMatcher> ignored() throws IOException {
         Path f = root.resolve(".clean-code-ignore");
         List<java.nio.file.PathMatcher> out = new ArrayList<>();
@@ -423,7 +431,10 @@ public class CleanCodeReport {
         for (String line : Files.readAllLines(f)) {
             String p = line.trim();
             if (p.isEmpty() || p.startsWith("#")) continue;
-            out.add(f.getFileSystem().getPathMatcher("glob:" + p));
+            boolean hidden = p.startsWith("?");
+            if (hidden) p = p.substring(1).trim();
+            if (p.isEmpty()) continue;
+            (hidden ? onRequest : out).add(f.getFileSystem().getPathMatcher("glob:" + p));
         }
         return out;
     }
@@ -437,7 +448,10 @@ public class CleanCodeReport {
                 for (Path p : s.filter(f -> f.toString().endsWith(".java")).sorted().collect(Collectors.toList())) {
                     Path rel = root.relativize(p);
                     if (skip.stream().anyMatch(m -> m.matches(rel) || m.matches(rel.getFileName()))) continue;
-                    sources.add(new Source(p, root, test));
+                    Source src = new Source(p, root, test);
+                    src.onRequest = onRequest.stream().anyMatch(m -> m.matches(rel) || m.matches(rel.getFileName()));
+                    if (src.onRequest && !scoped() && !listTargets) continue;
+                    sources.add(src);
                 }
             }
         }
@@ -1495,7 +1509,8 @@ public class CleanCodeReport {
         + "  --nur Ziel   nur ein Ausschnitt: Package (de.firma.projekt.core, auch als Präfix oder einzelnes Segment wie core),\n"
         + "               Klasse (Kasse, mit * als Joker: *Adapter) oder Methode (Kasse#bezahlen); mehrfach oder mit Komma\n"
         + "  --alle       jede Fundstelle auf der Konsole\n"
-        + "  --ziele      Packages und Klassen des Projekts auflisten, keinen Bericht schreiben";
+        + "  --ziele      Packages und Klassen des Projekts auflisten, keinen Bericht schreiben\n"
+        + "  .clean-code-ignore  Globs, eines je Zeile, die der Bericht übergeht; mit ? davor nur im Gesamtbericht, ein --nur-Ziel holt sie";
 
     public static void main(String[] args) throws IOException {
         boolean all = false, listTargets = false;
@@ -1517,6 +1532,7 @@ public class CleanCodeReport {
         try {
             if (listTargets) {
                 report.scopes.clear();
+                report.listTargets = true;
                 report.analyse();
                 System.out.print(report.targets().isEmpty() ? "Unter src/ liegt kein Java-Code.\n" : report.targets());
                 return;
