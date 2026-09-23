@@ -4,13 +4,18 @@ description: Erzeugt den Clean-Code-Report des Projekts (HTML mit Punktestand, R
 ---
 # Clean-Code-Report 2.0
 
-Werkzeug: `java .opencode/skills/clean-code-report/CleanCodeReport.java`, im Projektordner ausführen. Braucht ein JDK 17 oder neuer (der Bericht liest den Code mit dem Java-Parser des JDK), keine Abhängigkeiten. Schreibt `target/clean-code-report.html` und druckt Punktestand, Rang, Endgegner, Strafpunkte je Familie und die Monster mit Anzahl. Mit `--alle` druckt es zusätzlich jede Fundstelle. Kein Gate: Der Bericht zeigt, er entscheidet nicht.
+Werkzeug: `java .opencode/skills/clean-code-report/CleanCodeReport.java`, im Projektordner ausführen. Braucht ein JDK 17 oder neuer (der Bericht liest den Code mit dem Java-Parser des JDK), keine Abhängigkeiten. Schreibt `target/clean-code-report.html` und druckt Punktestand, Rang, Endgegner, Punkte je Familie, die schwächste Familie und die Monster mit Anzahl und Kosten. Mit `--alle` druckt es zusätzlich jede Fundstelle. Kein Gate: Der Bericht zeigt, er entscheidet nicht.
 
 ## Vorgehen
 1. Werkzeug ausführen, Ausgabe lesen.
-2. Nennen: Punkte und Rang, die Familie mit den meisten Strafpunkten, den Endgegner (die Methode mit den meisten Strafpunkten), die drei teuersten Monster mit je einem Beispiel als `Datei:Zeile`.
+2. Nennen: Punkte und Rang, die Familie mit den wenigsten Punkten, den Endgegner (die Methode, deren Funde am meisten kosten), die drei teuersten Monster mit je einem Beispiel als `Datei:Zeile`.
 3. Genau einen ersten Schritt vorschlagen: das Refactoring zum teuersten Fund, mit Namen der Technik. Nichts ändern.
-4. Darauf hinweisen, dass `target/clean-code-report.html` im Browser die Funde im Code zeigt und unter „Regelwerk“ jede Regel mit Schwelle, Strafpunkten und Refactoring erklärt.
+4. Darauf hinweisen, dass `target/clean-code-report.html` im Browser die Funde im Code zeigt und unter „Regelwerk“ jede Regel mit Schwelle, Kosten und Refactoring erklärt.
+
+## Ausschnitt
+`--nur Ziel` grenzt den Bericht ein, mehrfach oder mit Komma: ein Package (`de.firma.projekt.core`, auch als Präfix oder als einzelnes Segment wie `core`), eine Klasse (`Kasse` oder `de.firma.projekt.core.Kasse`, mit `*` als Joker: `*Adapter`) oder eine Methode (`Kasse#bezahlen`). `--ziele` listet die Packages und Klassen des Projekts. Ein Ausschnitt zählt nur die Funde darin, schreibt den Verlauf nicht fort und überschreibt `target/clean-code-report.html`.
+
+Nennt jemand den Ausschnitt in Worten („alle Domain-Klassen“, „nur die Adapter“, „die Methode, die den Preis berechnet“): erst `--ziele` ausführen, dann die passenden Packages, Klassen oder Methoden wählen und das Werkzeug mit `--nur` und `--alle` aufrufen. Im Ergebnis sagen, welcher Ausschnitt gewählt wurde. Passt nichts eindeutig, die Kandidaten nennen und nachfragen.
 
 ## Der Katalog
 Sechs Familien nach dem Smell-Katalog von Martin Fowler in der Einteilung von Mäntylä (bekannt durch refactoring.guru); Readability nach Clean Code, Test Smells nach xUnit Test Patterns. Change Preventers (Divergent Change, Shotgun Surgery) brauchen die Änderungshistorie und fehlen.

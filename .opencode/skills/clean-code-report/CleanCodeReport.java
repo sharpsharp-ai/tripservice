@@ -337,9 +337,83 @@ public class CleanCodeReport {
     final List<Finding> findings = new ArrayList<>();
     final List<Source> sources = new ArrayList<>();
     final List<Object[]> stringLiterals = new ArrayList<>();      // src, method, line, text, compared
+    final List<String> scopes = new ArrayList<>();                 // --nur: Packages, Klassen, Klasse#methode
+    final List<Method> focus = new ArrayList<>();                  // die Methoden eines Methoden-Ausschnitts
     final Path root;
 
     CleanCodeReport(Path root) { this.root = root; }
+
+    boolean scoped() { return !scopes.isEmpty(); }
+    String scopeLabel() { return String.join(", ", scopes); }
+
+    // ---- Ausschnitt: --nur ---------------------------------------------------------
+
+    static String packageOf(Source s) {
+        return s.file.replaceAll("^src/(main|test)/java/", "").replaceAll("/[^/]*$", "").replace('/', '.');
+    }
+    static String classOf(Source s) { return s.file.replaceAll(".*/", "").replace(".java", ""); }
+    static boolean globMatches(String glob, String name) {
+        return name.toLowerCase(Locale.ROOT).matches(glob.toLowerCase(Locale.ROOT).replace(".", "\\.").replace("*", ".*"));
+    }
+
+    /** Ein Ziel wie „de.firma.projekt.core“, „core“, „Kasse“, „*Adapter“ oder „Kasse#bezahlen“: passt es zu dieser Datei? */
+    static boolean matchesFile(Source s, String scope) {
+        String raw = scope.contains("#") ? scope.substring(0, scope.indexOf('#')) : scope;
+        final String target = raw.replace('/', '.').replaceAll("^src\\.(main|test)\\.java\\.", "").replaceAll("\\.java$", "").trim();
+        if (target.isEmpty()) return false;
+        String pkg = packageOf(s), cls = classOf(s);
+        if (target.contains(".")) {
+            String last = target.substring(target.lastIndexOf('.') + 1), head = target.substring(0, target.lastIndexOf('.'));
+            if (!last.isEmpty() && (Character.isUpperCase(last.charAt(0)) || last.contains("*"))) return pkg.equalsIgnoreCase(head) && globMatches(last, cls);   // de.firma.projekt.core.Kasse, de.firma.projekt.core.*Test
+            return pkg.equalsIgnoreCase(target) || pkg.toLowerCase(Locale.ROOT).startsWith(target.toLowerCase(Locale.ROOT) + ".");
+        }
+        if (globMatches(target, cls)) return true;
+        // Ein kleingeschriebenes Wort ohne Punkt ist ein Package-Segment (core, adapter); Klassen beginnen groß, Methodenziele meinen nur ihre Klasse.
+        return !scope.contains("#") && !target.contains("*") && Character.isLowerCase(target.charAt(0)) && Arrays.stream(pkg.split("\\.")).anyMatch(seg -> seg.equalsIgnoreCase(target));
+    }
+
+    static boolean matchesMethod(Method m, String scope) {
+        if (!scope.contains("#")) return false;
+        String cls = scope.substring(0, scope.indexOf('#')).replaceAll(".*\\.", ""), name = scope.substring(scope.indexOf('#') + 1).replaceAll("\\(.*", "").trim();
+        return globMatches(cls, m.owner.name) && (m.name.equalsIgnoreCase(name) || (m.ctor && name.equalsIgnoreCase(m.owner.name)));
+    }
+
+    /** Was es im Projekt zu zielen gibt: Packages mit ihren Klassen, für --ziele und für Fehlermeldungen. */
+    String targets() {
+        StringBuilder out = new StringBuilder();
+        for (boolean test : new boolean[]{false, true}) {
+            Map<String, List<String>> byPkg = new java.util.TreeMap<>();
+            for (Source s : sources) if (s.test == test) byPkg.computeIfAbsent(packageOf(s), k -> new ArrayList<>()).add(classOf(s));
+            if (byPkg.isEmpty()) continue;
+            out.append(test ? "Tests:\n" : "Produktivcode:\n");
+            for (Map.Entry<String, List<String>> e : byPkg.entrySet()) out.append("  ").append(e.getKey()).append(": ").append(String.join(", ", e.getValue())).append("\n");
+        }
+        return out.toString();
+    }
+
+    void applyScope() {
+        List<Source> kept = new ArrayList<>();
+        for (Source s : sources) if (scopes.stream().anyMatch(sc -> matchesFile(s, sc))) kept.add(s);
+        if (kept.isEmpty()) throw new IllegalArgumentException("Kein Treffer für --nur " + scopeLabel() + ". Das gibt es:\n" + targets());
+        sources.clear(); sources.addAll(kept);
+    }
+
+    /** Nach der Analyse: bei Klasse#methode bleiben nur die Funde in diesen Methoden. */
+    void applyMethodScope() {
+        List<String> methodScopes = scopes.stream().filter(sc -> sc.contains("#")).collect(Collectors.toList());
+        if (methodScopes.isEmpty()) return;
+        for (Source s : sources) for (Method m : s.methods) if (methodScopes.stream().anyMatch(sc -> matchesMethod(m, sc))) focus.add(m);
+        boolean wholeFiles = scopes.stream().anyMatch(sc -> !sc.contains("#"));
+        if (focus.isEmpty() && !wholeFiles) {
+            String have = sources.stream().flatMap(s -> s.methods.stream()).map(m -> m.owner.name + "#" + m.name).distinct().collect(Collectors.joining(", "));
+            throw new IllegalArgumentException("Keine Methode passt zu --nur " + String.join(", ", methodScopes) + ". Methoden in diesen Klassen: " + have);
+        }
+        findings.removeIf(f -> {
+            Source src = sources.stream().filter(s -> s.file.equals(f.file)).findFirst().orElse(null);
+            boolean fileScoped = src != null && scopes.stream().anyMatch(sc -> !sc.contains("#") && matchesFile(src, sc));
+            return !fileScoped && focus.stream().noneMatch(m -> m.file.equals(f.file) && f.line >= m.declLine && f.line <= m.end);
+        });
+    }
 
     /** Dateien, die der Bericht übergeht: Muster aus .clean-code-ignore, eins je Zeile, relativ zum Projektordner. */
     List<java.nio.file.PathMatcher> ignored() throws IOException {
@@ -368,6 +442,7 @@ public class CleanCodeReport {
             }
         }
         if (sources.isEmpty()) return;
+        if (scoped()) applyScope();
         parse();
         for (Source src : sources) {
             for (Klass k : src.classes) classSmells(src, k);
@@ -379,6 +454,7 @@ public class CleanCodeReport {
         clumps();
         repeatedSwitches();
         duplicates();
+        if (scoped()) applyMethodScope();
     }
 
     /** Texte sind magisch, wenn sie verglichen werden oder mehrfach vorkommen. Meldungen und Formate sind es nicht. */
@@ -1208,11 +1284,13 @@ public class CleanCodeReport {
 
         StringBuilder h = new StringBuilder();
         h.append("<!doctype html><html lang=\"de\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">");
-        h.append("<title>Clean-Code-Report ").append(esc(project)).append("</title><style>").append(CSS).append("</style></head><body><div class=\"app\">");
+        String focusHash = focus.isEmpty() ? "" : "f" + fileIndex.get(focus.get(0).file) + "-L" + focus.get(0).start;
+        h.append("<title>Clean-Code-Report ").append(esc(project)).append("</title><style>").append(CSS).append("</style></head><body data-focus=\"").append(focusHash).append("\"><div class=\"app\">");
 
         // ---- Linke Seite
         h.append("<aside class=\"side\"><div class=\"top\"><p class=\"kicker\">Clean-Code-Report ").append(VERSION).append("</p><h1>").append(esc(project)).append("</h1><p class=\"meta\">")
-         .append(when).append(" · ").append(sources.size()).append(" Dateien · ").append(findings.size()).append(" Funde</p>");
+         .append(when).append(" · ").append(sources.size()).append(sources.size() == 1 ? " Datei · " : " Dateien · ").append(findings.size()).append(" Funde</p>");
+        if (scoped()) h.append("<p class=\"scope\">Ausschnitt: <b>").append(esc(scopeLabel())).append("</b></p>");
 
         double angle = Math.PI * (1 - score / 100.0);
         double x = 100 + 78 * Math.cos(angle), y = 100 - 78 * Math.sin(angle);
@@ -1364,7 +1442,7 @@ public class CleanCodeReport {
           var files=[].slice.call(document.querySelectorAll('.file')),tabs=[].slice.call(document.querySelectorAll('.tab')),editor=document.querySelector('.editor');
           function show(i,line){files.forEach(function(f,k){f.hidden=(k!==i)});tabs.forEach(function(t,k){t.classList.toggle('active',k===i)});
             if(line){var el=document.getElementById('f'+i+'-L'+line);if(el){el.scrollIntoView({block:'center'});el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');}}else{editor.scrollTop=0;}}
-          function route(){if(location.hash==='#rules'){show(files.length-1,0);return;}var m=location.hash.match(/^#f(\\d+)(?:-L(\\d+))?$/);if(m&&files[+m[1]])show(+m[1],m[2]?+m[2]:0);else if(files.length)show(0,0);}
+          function route(){if(location.hash==='#rules'){show(files.length-1,0);return;}var h=location.hash||(document.body.dataset.focus?'#'+document.body.dataset.focus:'');var m=h.match(/^#f(\\d+)(?:-L(\\d+))?$/);if(m&&files[+m[1]])show(+m[1],m[2]?+m[2]:0);else if(files.length)show(0,0);}
           window.addEventListener('hashchange',route);route();
           var box=document.getElementById('hints');if(box){box.addEventListener('change',function(){document.body.classList.toggle('nohints',!box.checked)});}
         })();
@@ -1376,6 +1454,7 @@ public class CleanCodeReport {
         .app{display:grid;grid-template-columns:420px 1fr;height:100vh}
         .side{overflow-y:auto;background:linear-gradient(180deg,var(--bg2),var(--bg));border-right:1px solid var(--edge)}
         .top{padding:20px 18px 12px;border-bottom:1px solid var(--edge)}.kicker{margin:0;color:var(--ice);font-size:.8rem;letter-spacing:.04em}h1{margin:2px 0 2px;font-size:1.45rem}.meta{margin:0 0 10px;color:var(--soft);font-size:.85rem}
+        .scope{margin:-6px 0 10px;padding:4px 10px;border-radius:8px;background:rgba(159,216,255,.12);color:var(--ice);font-size:.85rem}.scope b{color:#fff}
         .hero{display:flex;align-items:center;gap:12px}.score{font-size:40px;font-weight:700;fill:#fff}.of{font-size:11px;fill:var(--soft)}
         .rank{margin:0;font-size:1.15rem;font-weight:600}.big{font-size:1.5rem;vertical-align:middle}.tag{margin:2px 0 4px;color:var(--soft);font-size:.9rem}.stat{margin:0;color:var(--ice);font-size:.85rem}
         .history{margin:8px 0 0;color:var(--soft);font-size:.8rem}.pill{display:inline-block;margin:2px 3px 0 0;padding:0 8px;border-radius:999px;background:rgba(255,255,255,.1)}.pill.now{background:var(--beam);color:#fff}
@@ -1412,17 +1491,47 @@ public class CleanCodeReport {
 
     // ---- Start ----------------------------------------------------------------------
 
+    static final String USAGE = "Aufruf: java CleanCodeReport.java [Projektordner] [--nur Ziel]... [--alle] [--ziele]\n"
+        + "  --nur Ziel   nur ein Ausschnitt: Package (de.firma.projekt.core, auch als Präfix oder einzelnes Segment wie core),\n"
+        + "               Klasse (Kasse, mit * als Joker: *Adapter) oder Methode (Kasse#bezahlen); mehrfach oder mit Komma\n"
+        + "  --alle       jede Fundstelle auf der Konsole\n"
+        + "  --ziele      Packages und Klassen des Projekts auflisten, keinen Bericht schreiben";
+
     public static void main(String[] args) throws IOException {
-        boolean all = Arrays.asList(args).contains("--alle");
-        String dir = Arrays.stream(args).filter(a -> !a.startsWith("--")).findFirst().orElse(".");
+        boolean all = false, listTargets = false;
+        String dir = ".";
+        List<String> scopes = new ArrayList<>();
+        for (int i = 0; i < args.length; i++) {
+            String a = args[i];
+            if (a.equals("--alle")) all = true;
+            else if (a.equals("--ziele")) listTargets = true;
+            else if (a.startsWith("--nur=")) scopes.addAll(Arrays.asList(a.substring(6).split(",")));
+            else if (a.equals("--nur") && i + 1 < args.length) scopes.addAll(Arrays.asList(args[++i].split(",")));
+            else if (a.equals("--hilfe") || a.equals("--help") || a.equals("-h")) { System.out.println(USAGE); return; }
+            else if (a.startsWith("--")) { System.err.println("Unbekannter Schalter " + a + "\n" + USAGE); System.exit(2); }
+            else dir = a;
+        }
         Path root = Paths.get(dir).toAbsolutePath().normalize();
         CleanCodeReport report = new CleanCodeReport(root);
-        report.analyse();
+        for (String s : scopes) if (!s.isBlank()) report.scopes.add(s.trim());
+        try {
+            if (listTargets) {
+                report.scopes.clear();
+                report.analyse();
+                System.out.print(report.targets().isEmpty() ? "Unter src/ liegt kein Java-Code.\n" : report.targets());
+                return;
+            }
+            report.analyse();
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
+        }
         int score = report.score();
 
+        // Der Verlauf gilt dem ganzen Projekt, ein Ausschnitt schreibt ihn nicht fort.
         Path historyFile = root.resolve(".clean-code-history");
         List<int[]> history = new ArrayList<>();
-        if (Files.exists(historyFile)) {
+        if (!report.scoped() && Files.exists(historyFile)) {
             for (String line : Files.readAllLines(historyFile)) {
                 String[] parts = line.trim().split("\\s+");
                 if (parts.length >= 2 && parts[1].matches("\\d+")) history.add(new int[]{Integer.parseInt(parts[1])});
@@ -1431,16 +1540,20 @@ public class CleanCodeReport {
         Path out = root.resolve("target/clean-code-report.html");
         Files.createDirectories(out.getParent());
         Files.writeString(out, report.html(history), StandardCharsets.UTF_8);
-        Files.writeString(historyFile, (Files.exists(historyFile) ? Files.readString(historyFile) : "")
+        if (!report.scoped()) Files.writeString(historyFile, (Files.exists(historyFile) ? Files.readString(historyFile) : "")
             + LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + " " + score + "\n", StandardCharsets.UTF_8);
 
         String[] lv = level(score);
         System.out.println("Clean-Code-Report " + VERSION + ": " + score + " von 100, " + lv[0] + " " + lv[1]);
+        if (report.scoped()) System.out.println("  Ausschnitt: " + report.scopeLabel() + " (" + report.sources.size() + (report.sources.size() == 1 ? " Datei" : " Dateien")
+            + (report.focus.isEmpty() ? "" : ", " + report.focus.stream().map(m -> m.owner.name + "#" + m.name).distinct().collect(Collectors.joining(", "))) + ")");
         Method boss = report.boss();
         if (boss != null) System.out.println("  Endgegner: " + boss.label() + " in " + boss.file.replaceAll(".*/", "") + ":" + boss.start + ", " + boss.codeLines + " Zeilen, Tiefe " + boss.depth + ", Komplexität " + boss.complexity + ", " + (boss.body == null ? 0 : boss.body.locals.size()) + " Variablen");
         else System.out.println("  Endgegner: keiner (keine Methode, deren Funde zusammen 25 oder mehr kosten)");
         Map<Family, Integer> fpts = report.pointsByFamily();
         System.out.println("  Punkte je Familie (Durchschnitt = Punktestand): " + Arrays.stream(Family.values()).map(f -> f.emoji + " " + f.title + " " + (fpts.containsKey(f) ? fpts.get(f) : "nicht bewertet, keine Tests")).collect(Collectors.joining(" · ")));
+        fpts.entrySet().stream().min(Map.Entry.comparingByValue()).filter(e -> e.getValue() < 100)
+            .ifPresentOrElse(e -> System.out.println("  Schwächste Familie: " + e.getKey().emoji + " " + e.getKey().title + " " + e.getValue()), () -> System.out.println("  Schwächste Familie: keine, alle bei 100"));
         Map<Smell, Double> cost = report.costBySmell();
         report.findings.stream().collect(Collectors.groupingBy(Finding::smell, () -> new EnumMap<>(Smell.class), Collectors.counting()))
             .entrySet().stream().sorted(Comparator.comparingDouble(e -> -cost.get(e.getKey())))

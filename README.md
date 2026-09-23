@@ -61,7 +61,8 @@ Ein Blick auf den Code, ohne Gnade und ohne Gate: Der Bericht liest den Code mit
 sucht 30 Code Smells aus sechs Familien (Bloaters, Object-Orientation Abusers, Dispensables, Couplers,
 Readability, Test Smells) und macht daraus Punkte, einen Rang, einen Radar je Familie und eine Monster-Galerie.
 Links die Funde, rechts der Code wie in der IDE, ein Klick springt zur Zeile; das Regelwerk mit jeder Schwelle
-und jedem Refactoring steht im Bericht. `TripService_Original.java` steht in `.clean-code-ignore` und zählt nicht mit.
+und jedem Refactoring steht im Bericht. Ein Ausschnitt geht auch: `--nur core`, `--nur Kasse` oder `--nur Kasse#bezahlen`,
+in opencode auch in Worten: `/clean-code-report nur die Domain-Klassen`. `TripService_Original.java` steht in `.clean-code-ignore` und zählt nicht mit.
 
 ```bash
 java .opencode/skills/clean-code-report/CleanCodeReport.java   # schreibt target/clean-code-report.html
